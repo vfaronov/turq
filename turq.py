@@ -5,8 +5,10 @@ __version__ = '0.1.0'
 
 import BaseHTTPServer
 import collections
+from cStringIO import StringIO
 from datetime import datetime, timedelta
 import email.message
+import gzip
 import httplib
 import json
 from optparse import OptionParser
@@ -59,6 +61,7 @@ class Rule(object):
         self._enable_cors = False
         self._enable_jsonp = False
         self._allow = None
+        self._gzip = False
     
     def status(self, code):
         self._status = code
@@ -170,6 +173,10 @@ class Rule(object):
             raise ValueError('unknown expires format: "%s"' % when)
         return self.header('Expires', dt.strftime('%a, %d %b %Y %H:%M:%S GMT'))
     
+    def gzip(self):
+        self._gzip = True
+        return self
+    
     def first(self):
         sub = Rule()
         self._chain = [sub]
@@ -239,12 +246,22 @@ class Rule(object):
                 resp.set_header('Content-Type', 'text/plain')
                 resp.body = 'Method %s not allowed here' % req.method
     
+    def apply_gzip(self, req, resp):
+        if self._gzip and resp.body:
+            zbuf = StringIO()
+            zfile = gzip.GzipFile(fileobj=zbuf, mode='w')
+            zfile.write(resp.body)
+            zfile.close()
+            resp.body = zbuf.getvalue()
+            resp.set_header('Content-Encoding', 'gzip')
+    
     def apply(self, req, resp):
         self.apply_normal(req, resp)
         self.apply_headers(req, resp)
         self.apply_jsonp(req, resp)
         self.apply_chain(req, resp)
         self.apply_allow(req, resp)
+        self.apply_gzip(req, resp)
         self.apply_processor(req, resp)
 
 

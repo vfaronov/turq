@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
+from cStringIO import StringIO
 from datetime import datetime, timedelta
+import gzip
 import httplib
 import socket
 import subprocess
@@ -224,6 +226,13 @@ class TurqTestCase(unittest.TestCase):
         self.assertEqual(data, 'fine!')
         info, data = self.request('DELETE', '/')
         self.assertEqual(info.status, httplib.METHOD_NOT_ALLOWED)
+    
+    def test_gzip(self):
+        self.install("path().text('compress this!').gzip()")
+        info, data = self.request('GET', '/')
+        self.assertEqual(gzip.GzipFile(fileobj=StringIO(data)).read(),
+                         'compress this!')
+        self.assertEqual(info.msg['Content-Encoding'], 'gzip')
 
 
 if __name__ == '__main__':
