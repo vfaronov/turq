@@ -58,6 +58,7 @@ class Rule(object):
         self._counter = 0
         self._enable_cors = False
         self._enable_jsonp = False
+        self._allow = None
     
     def status(self, code):
         self._status = code
@@ -147,6 +148,10 @@ class Rule(object):
                     header('WWW-Authenticate',
                            'Digest realm="%s", nonce="%s"' % (realm, nonce))
     
+    def allow(self, *methods):
+        self._allow = set(m.lower() for m in methods)
+        return self
+    
     def cors(self):
         self._enable_cors = True
         return self.header('Access-Control-Allow-Origin', '*')
@@ -227,11 +232,19 @@ class Rule(object):
             self._processor(req, sub)
             sub.apply(req, resp)
     
+    def apply_allow(self, req, resp):
+        if self._allow is not None:
+            if req.method.lower() not in self._allow:
+                resp.status = httplib.METHOD_NOT_ALLOWED
+                resp.set_header('Content-Type', 'text/plain')
+                resp.body = 'Method %s not allowed here' % req.method
+    
     def apply(self, req, resp):
         self.apply_normal(req, resp)
         self.apply_headers(req, resp)
         self.apply_jsonp(req, resp)
         self.apply_chain(req, resp)
+        self.apply_allow(req, resp)
         self.apply_processor(req, resp)
 
 

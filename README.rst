@@ -48,13 +48,9 @@ Imitate round-robin balancing between three backends, one of which is slow::
         r.next().html()
         r.next().delay(5).html()
 
-Serve XML from ``/news.rss`` on ``GET`` and ``HEAD``,
-disallow all other methods::
+Serve XML from ``/product.xml``, reflecting the passed ``id`` parameter::
 
-    @path('/news.rss')
+    @path('/product.xml')
     def process(req, r):
-        if req.method in ('GET', 'HEAD'):
-            r.xml('<rss></rss>')
-        else:
-            r.status(405).xml('<error>Method not allowed</error>')
+        r.xml('<product><id>%s</id></product>' % req.query['id'][0])
 

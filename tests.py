@@ -217,6 +217,13 @@ class TurqTestCase(unittest.TestCase):
             ['sessionid=123; Max-Age=3600',
              'evil_tracking=we_own_you; HttpOnly']
         )
+    
+    def test_allow(self):
+        self.install("path().allow('GET', 'HEAD').text('fine!')")
+        info, data = self.request('GET', '/')
+        self.assertEqual(data, 'fine!')
+        info, data = self.request('DELETE', '/')
+        self.assertEqual(info.status, httplib.METHOD_NOT_ALLOWED)
 
 
 if __name__ == '__main__':
