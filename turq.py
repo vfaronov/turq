@@ -438,13 +438,8 @@ CONSOLE_TPL = string.Template('''
 
 
 def render_console(code, okay='', error=''):
-    return CONSOLE_TPL.substitute({
-        'code': code,
-        'okay': okay,
-        'error': error,
-        'cheat': Cheat.format(),
-        'version': __version__,
-    })
+    return CONSOLE_TPL.substitute(code=code, okay=okay, error=error,
+                                  cheat=Cheat.format(), version=__version__)
 
 
 class TurqHandler(BaseHTTPServer.BaseHTTPRequestHandler):
