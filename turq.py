@@ -403,7 +403,6 @@ CONSOLE_TPL = string.Template('''
             }
             #cheat th {
                 text-align: left;
-                vertical-align: top;
                 padding-right: 0.5em;
             }
             #cheat th .args { font-weight: normal; }
@@ -432,6 +431,7 @@ CONSOLE_TPL = string.Template('''
                 <span id="okay" style="color: #0E7C00">$okay</span>
             </div>
         </form>
+        <p><a href="https://github.com/vfaronov/turq">Turq</a> $version</p>
     </body>
 </html>
 ''')
@@ -442,7 +442,8 @@ def render_console(code, okay='', error=''):
         'code': code,
         'okay': okay,
         'error': error,
-        'cheat': Cheat.format()
+        'cheat': Cheat.format(),
+        'version': __version__,
     })
 
 
