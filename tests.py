@@ -185,6 +185,11 @@ class TurqTestCase(unittest.TestCase):
                      "path('/sub').header('X-Foo', 'baz')")
         info, data = self.request('GET', '/sub')
         self.assertEqual(info.msg['X-Foo'], 'baz')
+    
+    def test_body_from_file(self):
+        self.install("path().body_file('README.rst')")
+        info, data = self.request('GET', '/')
+        self.assert_('Usage' in data)
 
 
 if __name__ == '__main__':

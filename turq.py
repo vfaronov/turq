@@ -59,6 +59,9 @@ class Rule(object):
         self._body = data
         return self
     
+    def body_file(self, path):
+        return self.body(open(path).read())
+    
     def delay(self, seconds):
         self._delay = seconds
         return self
