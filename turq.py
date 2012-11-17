@@ -147,7 +147,7 @@ class Rule(object):
         del resp[name]
         resp[name] = value
     
-    def apply(self, req, resp):
+    def apply_normal(self, req, resp):
         if self._delay:
             time.sleep(self._delay)
         if self._status is not None:
@@ -156,11 +156,13 @@ class Rule(object):
             resp.set_header(name, value)
         if self._body is not None:
             resp.body = self._body
-        
+    
+    def apply_jsonp(self, req, resp):
         if self._enable_jsonp and ('callback' in req.query):
             resp.body = '%s(%s);' % (req.query['callback'][0], resp.body)
             resp.set_header('Content-Type', 'application/javascript')
-        
+    
+    def apply_chain(self, req, resp):
         if self._counter >= len(self._chain):
             if self._final is not None:
                 self._final.apply(req, resp)
@@ -169,11 +171,18 @@ class Rule(object):
         if self._counter < len(self._chain):
             self._chain[self._counter].apply(req, resp)
             self._counter += 1
-        
+    
+    def apply_processor(self, req, resp):
         if self._processor is not None:
             sub = Rule()
             self._processor(req, sub)
             sub.apply(req, resp)
+    
+    def apply(self, req, resp):
+        self.apply_normal(req, resp)
+        self.apply_jsonp(req, resp)
+        self.apply_chain(req, resp)
+        self.apply_processor(req, resp)
 
 
 class PathRule(Rule):
