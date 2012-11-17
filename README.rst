@@ -10,16 +10,16 @@ Usage
 Grab ``turq.py`` and run this (on a machine with Python 2.6 or 2.7)::
 
     $ python turq.py 
-    Listening on port 35835
-    Try http://localhost:35835/+turq/
+    Listening on port 13085
+    Try http://localhost:13085/+turq/
 
-Open ``http://localhost:35835/+turq/`` in your Web browser.
+Open ``http://localhost:13085/+turq/`` in your Web browser.
 You should see a text area. This is the Turq console.
 Enter this and click “Commit”::
 
     path('*').text()
 
-Now open ``http://localhost:35835/`` (without the ``+turq/``) in another tab.
+Now open ``http://localhost:13085/`` (without the ``+turq/``) in another tab.
 You should see a plain-text greeting.
 
 Examples

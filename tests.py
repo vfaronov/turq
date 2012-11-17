@@ -10,7 +10,6 @@ import time
 import unittest
 import urllib
 
-PORT = 31092
 socket.setdefaulttimeout(5)
 
 
@@ -21,9 +20,8 @@ class TurqTestCase(unittest.TestCase):
             # exec prevents the shell from spawning a subprocess
             # which then fails to terminate.
             # http://stackoverflow.com/questions/4789837/
-            'exec python turq.py -p %d' % PORT, shell=True,
+            'exec python turq.py', shell=True,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        self.port = PORT
         time.sleep(0.2)
     
     def tearDown(self):
@@ -32,7 +30,7 @@ class TurqTestCase(unittest.TestCase):
         time.sleep(0.2)
     
     def request(self, method, path, headers=None, body=None):
-        conn = httplib.HTTPConnection('127.0.0.1', self.port)
+        conn = httplib.HTTPConnection('127.0.0.1', 13085)
         conn.request(method, path, body, headers or {})
         resp = conn.getresponse()
         return resp, resp.read()

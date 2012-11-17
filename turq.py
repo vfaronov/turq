@@ -22,6 +22,8 @@ import urllib2
 import urlparse
 
 
+DEFAULT_PORT = 13085
+
 Request = collections.namedtuple(
     'Request', ('method', 'path', 'query', 'headers', 'body'))
 
@@ -443,7 +445,8 @@ class TurqHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     parser = OptionParser(usage='usage: %prog [-p PORT]')
-    parser.add_option('-p', '--port', dest='port', type='int', default=0,
+    parser.add_option('-p', '--port', dest='port', type='int',
+                      default=DEFAULT_PORT,
                       help='listen on PORT', metavar='PORT')
     options, args = parser.parse_args()
     
