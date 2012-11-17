@@ -334,20 +334,21 @@ def render_console(code, okay='', error=''):
                 window.setTimeout(function() {
                     document.getElementById('okay').innerText = '';
                 }, 2000);
+                document.getElementById('codeEntry').focus();
             };
         </script>
     </head>
     <body>
         <h1>Turq</h1>
-        <pre style="color: red">%s</pre>
+        <pre style="color: #FF0000">%s</pre>
         <form action="/+turq/" method="post">
             <div>
-                <pre><textarea name="code"
+                <pre><textarea id="codeEntry" name="code"
                     rows="25" cols="80">%s</textarea></pre>
             </div>
             <div>
-                <input type="submit" value="Commit">
-                <span id="okay" style="color: #0E7C00;">%s</span>
+                <input type="submit" value="Commit" accesskey="s">
+                <span id="okay" style="color: #0E7C00">%s</span>
             </div>
         </form>
     </body>
