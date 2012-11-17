@@ -12,6 +12,7 @@ import gzip
 import httplib
 import json
 from optparse import OptionParser
+import random
 import re
 import socket
 import sys
@@ -37,6 +38,23 @@ class Response(object):
     
     def add_header(self, name, value, **params):
         self.headers.add_header(name, value, **params)
+
+
+def make_text(bytes):
+    buf = StringIO()
+    written = 0
+    words = 'lorem ipsum dolor sit amet, consectetur adipisicing elit'.split()
+    while written < bytes:
+        word = random.choice(words)
+        buf.write(word)
+        written += len(word)
+        if random.random() < 0.01:
+            buf.write('\n\n')
+            written += 2
+        else:
+            buf.write(' ')
+            written += 1
+    return buf.getvalue()
 
 
 class Rule(object):
@@ -101,6 +119,9 @@ class Rule(object):
     def text(self, text='Hello world!'):
         return self.ctype('text/plain; charset=utf-8').body(text)
     
+    def lots_of_text(self, bytes=20000):
+        return self.text(make_text(bytes))
+    
     def html(self, title='Hello world!', text='This is Turq!'):
         body = '''<!DOCTYPE html>
 <html>
@@ -113,6 +134,12 @@ class Rule(object):
     </body>
 </html>''' % (title, title, text)
         return self.ctype('text/html; charset=utf-8').body(body)
+    
+    def lots_of_html(self, bytes=20000, title='Hello world!'):
+        return self.html(
+            title=title,
+            text=make_text(bytes - 100).replace('\n\n', '</p><p>')
+        )
     
     def json(self, data={'result': 'turq'}, jsonp=True):
         self._enable_jsonp = jsonp

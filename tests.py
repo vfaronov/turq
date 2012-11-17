@@ -233,6 +233,18 @@ class TurqTestCase(unittest.TestCase):
         self.assertEqual(gzip.GzipFile(fileobj=StringIO(data)).read(),
                          'compress this!')
         self.assertEqual(info.msg['Content-Encoding'], 'gzip')
+    
+    def test_lots_of_text(self):
+        self.install("path().lots_of_text(30000)")
+        info, data = self.request('GET', '/')
+        self.assert_(data.count('\n') > 10)
+        self.assert_(abs(len(data) - 30000) <= 100)
+    
+    def test_lots_of_html(self):
+        self.install("path().lots_of_html(30000)")
+        info, data = self.request('GET', '/')
+        self.assert_(data.count('<p') > 10)
+        self.assert_(abs(len(data) - 30000) <= 300)
 
 
 if __name__ == '__main__':
