@@ -26,12 +26,15 @@ class Response(object):
     
     def __init__(self):
         self.status = httplib.OK
-        self.headers = email.message.Message()   # case-insensitive field names
+        self.headers = email.message.Message()
         self.body = None
     
-    def set_header(self, name, value):
+    def set_header(self, name, value, **params):
         del self.headers[name]
-        self.headers[name] = value
+        self.headers.add_header(name, value, **params)
+    
+    def add_header(self, name, value, **params):
+        self.headers.add_header(name, value, **params)
 
 
 class Rule(object):
@@ -40,7 +43,13 @@ class Rule(object):
     
     def __init__(self):
         self._status = None
-        self._headers = {}
+        
+        # Headers are tricky.
+        # We just store a sequence of (operation, name, value, params) tuples,
+        # a patch of sorts, and then apply this patch.
+        # Operation can be "set" (replacing) or "add".
+        self._headers = []
+        
         self._body = None
         self._processor = None
         self._delay = None
@@ -54,8 +63,12 @@ class Rule(object):
         self._status = code
         return self
     
-    def header(self, name, value):
-        self._headers[name] = value
+    def header(self, name, value, **params):
+        self._headers.append(('set', name, value, params))
+        return self
+    
+    def add_header(self, name, value, **params):
+        self._headers.append(('add', name, value, params))
         return self
     
     def body(self, data):
@@ -163,10 +176,15 @@ class Rule(object):
             time.sleep(self._delay)
         if self._status is not None:
             resp.status = self._status
-        for name, value in self._headers.items():
-            resp.set_header(name, value)
         if self._body is not None:
             resp.body = self._body
+    
+    def apply_headers(self, req, resp):
+        for op, name, value, params in self._headers:
+            if op == 'set':
+                resp.set_header(name, value, **params)
+            elif op == 'add':
+                resp.add_header(name, value, **params)
     
     def apply_jsonp(self, req, resp):
         if self._enable_jsonp and ('callback' in req.query):
@@ -191,6 +209,7 @@ class Rule(object):
     
     def apply(self, req, resp):
         self.apply_normal(req, resp)
+        self.apply_headers(req, resp)
         self.apply_jsonp(req, resp)
         self.apply_chain(req, resp)
         self.apply_processor(req, resp)

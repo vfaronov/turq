@@ -52,9 +52,25 @@ class TurqTestCase(unittest.TestCase):
         self.assertEqual(info.status, 403)
     
     def test_header(self):
-        self.install("path().header('X-Foo', 'bar; baz')")
+        self.install("path().header('X-Foo', 'bar', baz=None)")
         info, data = self.request('GET', '/')
         self.assertEqual(info.msg['X-Foo'], 'bar; baz')
+    
+    def test_add_header(self):
+        self.install("path().add_header('X-Foo', 'bar'). \\\n"
+                     "       add_header('X-Foo', 'baz', qux='yes')")
+        info, data = self.request('GET', '/')
+        self.assertEqual(info.msg.getheaders('X-Foo'),
+                         ['bar', 'baz; qux="yes"'])
+    
+    def test_overwrite_header(self):
+        self.install("path().add_header('X-Foo', 'bar'). \\\n"
+                     "       add_header('X-Foo', 'baz'). \\\n"
+                     "       add_header('X-Quux', 'yes')\n"
+                     "path('/sub').header('X-Foo', 'xyzzy')")
+        info, data = self.request('GET', '/sub')
+        self.assertEqual(info.msg['X-Foo'], 'xyzzy')
+        self.assertEqual(info.msg['X-Quux'], 'yes')
     
     def test_body(self):
         self.install("path().body('hello world')")
@@ -179,12 +195,6 @@ class TurqTestCase(unittest.TestCase):
         self.install("path().json(jsonp=False)")
         info, data = self.request('GET', '/?callback=callback')
         self.assertEqual(info.msg['Content-Type'], 'application/json')
-    
-    def test_overwrite_header(self):
-        self.install("path().header('X-Foo', 'bar')\n"
-                     "path('/sub').header('X-Foo', 'baz')")
-        info, data = self.request('GET', '/sub')
-        self.assertEqual(info.msg['X-Foo'], 'baz')
     
     def test_body_from_file(self):
         self.install("path().body_file('README.rst')")
