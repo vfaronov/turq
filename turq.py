@@ -140,7 +140,12 @@ class Rule(object):
     
     def basic_auth(self, realm='Turq'):
         return self.status(httplib.UNAUTHORIZED). \
-                    header('WWW-Authenticate', 'Basic realm=%s' % realm)
+                    header('WWW-Authenticate', 'Basic realm="%s"' % realm)
+    
+    def digest_auth(self, realm='Turq', nonce='twasbrillig'):
+        return self.status(httplib.UNAUTHORIZED). \
+                    header('WWW-Authenticate',
+                           'Digest realm="%s", nonce="%s"' % (realm, nonce))
     
     def cors(self):
         self._enable_cors = True
