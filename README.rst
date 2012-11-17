@@ -7,9 +7,10 @@ that respond with the status, headers and body of your choosing.
 
 Usage
 -----
-Grab ``turq.py`` and run this (on a machine with Python 2.6 or 2.7)::
+Run this on a machine with Python 2.6 or 2.7::
 
-    $ python turq.py 
+    $ pip install turq
+    $ python -m turq
     Listening on port 13085
     Try http://localhost:13085/+turq/
 
