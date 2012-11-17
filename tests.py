@@ -190,6 +190,11 @@ class TurqTestCase(unittest.TestCase):
         self.install("path().body_file('README.rst')")
         info, data = self.request('GET', '/')
         self.assert_('Usage' in data)
+    
+    def test_body_from_url(self):
+        self.install("path().body_url('http://httpbin.org/html')")
+        info, data = self.request('GET', '/')
+        self.assert_('Herman Melville - Moby-Dick' in data)
 
 
 if __name__ == '__main__':

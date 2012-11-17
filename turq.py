@@ -15,6 +15,7 @@ import socket
 import sys
 import time
 import traceback
+import urllib2
 import urlparse
 
 
@@ -34,6 +35,8 @@ class Response(object):
 
 
 class Rule(object):
+    
+    url_cache = {}
     
     def __init__(self):
         self._status = None
@@ -61,6 +64,11 @@ class Rule(object):
     
     def body_file(self, path):
         return self.body(open(path).read())
+    
+    def body_url(self, url):
+        if url not in Rule.url_cache:
+            Rule.url_cache[url] = urllib2.urlopen(url).read()
+        return self.body(Rule.url_cache[url])
     
     def delay(self, seconds):
         self._delay = seconds
