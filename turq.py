@@ -541,7 +541,7 @@ if __name__ == '__main__':
                       help='listen on PORT', metavar='PORT')
     options, args = parser.parse_args()
     
-    server = BaseHTTPServer.HTTPServer(('', options.port), TurqHandler)
+    server = BaseHTTPServer.HTTPServer(('0.0.0.0', options.port), TurqHandler)
     sys.stderr.write('Listening on port %d\n' % server.server_port)
     sys.stderr.write('Try http://%s:%d/+turq/\n' %
                      (socket.getfqdn(), server.server_port))
