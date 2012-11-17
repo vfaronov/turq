@@ -27,6 +27,10 @@ class Response(object):
         self.status = httplib.OK
         self.headers = email.message.Message()   # case-insensitive field names
         self.body = None
+    
+    def set_header(self, name, value):
+        del self.headers[name]
+        self.headers[name] = value
 
 
 class Rule(object):
@@ -41,6 +45,7 @@ class Rule(object):
         self._final = None
         self._counter = 0
         self._enable_cors = False
+        self._enable_jsonp = False
     
     def status(self, code):
         self._status = code
@@ -81,7 +86,8 @@ class Rule(object):
 </html>''' % (title, title, text)
         return self.ctype('text/html; charset=utf-8').body(body)
     
-    def json(self, data={'result': 'turq'}):
+    def json(self, data={'result': 'turq'}, jsonp=True):
+        self._enable_jsonp = jsonp
         return self.ctype('application/json').body(json.dumps(data))
     
     def js(self):
@@ -137,15 +143,23 @@ class Rule(object):
     def __exit__(self, *args):
         return False
     
+    def _set_header(self, resp, name, value):
+        del resp[name]
+        resp[name] = value
+    
     def apply(self, req, resp):
         if self._delay:
             time.sleep(self._delay)
         if self._status is not None:
             resp.status = self._status
         for name, value in self._headers.items():
-            resp.headers[name] = value
+            resp.set_header(name, value)
         if self._body is not None:
             resp.body = self._body
+        
+        if self._enable_jsonp and ('callback' in req.query):
+            resp.body = '%s(%s);' % (req.query['callback'][0], resp.body)
+            resp.set_header('Content-Type', 'application/javascript')
         
         if self._counter >= len(self._chain):
             if self._final is not None:

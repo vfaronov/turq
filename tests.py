@@ -166,6 +166,19 @@ class TurqTestCase(unittest.TestCase):
         info, data = self.request('GET', '/')
         self.assertEqual(info.msg['Server'], 'Test-RuleSet/0.1')
         self.assertEqual(info.msg['Date'], 'Sat, 17 Nov 2012 00:00:00 GMT')
+    
+    def test_jsonp(self):
+        self.install("path().json()")
+        info, data = self.request('GET', '/')
+        self.assertEqual(info.msg['Content-Type'], 'application/json')
+        info, data = self.request('GET', '/?callback=callback')
+        self.assertEqual(info.msg['Content-Type'], 'application/javascript')
+        self.assert_('callback(' in data)
+    
+    def test_forbid_jsonp(self):
+        self.install("path().json(jsonp=False)")
+        info, data = self.request('GET', '/?callback=callback')
+        self.assertEqual(info.msg['Content-Type'], 'application/json')
 
 
 if __name__ == '__main__':
