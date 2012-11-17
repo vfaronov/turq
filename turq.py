@@ -123,6 +123,21 @@ class Rule(object):
     def redirect(self, location, status=httplib.FOUND):
         return self.status(status).header('Location', location)
     
+    def cookie(self, name, value, max_age=None, expires=None, path=None,
+               secure=False, http_only=False):
+        data = '%s=%s' % (name, value)
+        if max_age is not None:
+            data += '; Max-Age=%s' % max_age
+        if expires is not None:
+            data += '; Expires=%s' % expires
+        if path is not None:
+            data += '; Path=%s' % path
+        if secure:
+            data += '; Secure'
+        if http_only:
+            data += '; HttpOnly'
+        return self.add_header('Set-Cookie', data) 
+    
     def basic_auth(self, realm='Turq'):
         return self.status(httplib.UNAUTHORIZED). \
                     header('WWW-Authenticate', 'Basic realm=%s' % realm)

@@ -205,6 +205,18 @@ class TurqTestCase(unittest.TestCase):
         self.install("path().body_url('http://httpbin.org/html')")
         info, data = self.request('GET', '/')
         self.assert_('Herman Melville - Moby-Dick' in data)
+    
+    def test_cookies(self):
+        self.install(
+            "path().cookie('sessionid', '123', max_age=3600). \\\n"
+            "       cookie('evil_tracking', 'we_own_you', http_only=True)"
+        )
+        info, data = self.request('GET', '/')
+        self.assertEqual(
+            info.msg.getheaders('Set-Cookie'),
+            ['sessionid=123; Max-Age=3600',
+             'evil_tracking=we_own_you; HttpOnly']
+        )
 
 
 if __name__ == '__main__':
