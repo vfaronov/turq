@@ -197,7 +197,7 @@ class Rule(object):
     
     @Cheat.entry('[code]', 'JavaScript')
     def js(self, code='alert("Turq");'):
-        return self.ctype('application/javascript')
+        return self.ctype('application/javascript').body(code)
     
     @Cheat.entry('[code]')
     def xml(self, code='<turq></turq>'):
