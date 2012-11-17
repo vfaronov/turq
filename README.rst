@@ -32,7 +32,7 @@ which returns a simple HTML page after 2 seconds of “loading”::
 
 Imitate a JSON API with cross-origin support::
 
-    path('/api/v1/*').cors().json({'result': 123})
+    path('/api/v1/*').cors().json()
 
 Prompt for basic HTTP authentication,
 then serve up a simple page (ignoring credentials)::

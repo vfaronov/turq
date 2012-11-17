@@ -81,14 +81,13 @@ class Rule(object):
 </html>''' % (title, title, text)
         return self.ctype('text/html; charset=utf-8').body(body)
     
-    def json(self, data=None):
-        return self.ctype('application/json'). \
-                    body(json.dumps({} if data is None else data))
+    def json(self, data={'result': 'turq'}):
+        return self.ctype('application/json').body(json.dumps(data))
     
     def js(self):
         return self.ctype('application/javascript')
     
-    def xml(self, code):
+    def xml(self, code='<turq></turq>'):
         return self.ctype('application/xml').body(code)
     
     def redirect(self, location, status=httplib.FOUND):
@@ -165,7 +164,7 @@ class Rule(object):
 
 class PathRule(Rule):
     
-    def __init__(self, path):
+    def __init__(self, path='*'):
         self.regex = re.compile(
             '^' + re.escape(path).replace('\\*', '.*') + '$')
         super(PathRule, self).__init__()

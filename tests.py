@@ -47,22 +47,22 @@ class TurqTestCase(unittest.TestCase):
         return info, data
     
     def test_status(self):
-        self.install("path('*').status(403)")
+        self.install("path().status(403)")
         info, data = self.request('GET', '/')
         self.assertEqual(info.status, 403)
     
     def test_header(self):
-        self.install("path('*').header('X-Foo', 'bar; baz')")
+        self.install("path().header('X-Foo', 'bar; baz')")
         info, data = self.request('GET', '/')
         self.assertEqual(info.msg['X-Foo'], 'bar; baz')
     
     def test_body(self):
-        self.install("path('*').body('hello world')")
+        self.install("path().body('hello world')")
         info, data = self.request('GET', '/')
         self.assertEqual(data, 'hello world')
     
     def test_paths(self):
-        self.install("path('*').header('X-Foo', 'bar')\n"
+        self.install("path().header('X-Foo', 'bar')\n"
                      "path('/one/*').text('part one')\n"
                      "path('*.two').text('part two')\n")
         
@@ -91,7 +91,7 @@ class TurqTestCase(unittest.TestCase):
         self.assertEqual(data, 'part two')
     
     def test_delay(self):
-        self.install("path('*').delay(3).text('yep')")
+        self.install("path().delay(3).text('yep')")
         dt1 = datetime.now()
         info, data = self.request('GET', '/')
         dt2 = datetime.now()
@@ -99,7 +99,7 @@ class TurqTestCase(unittest.TestCase):
         self.assertEqual(data, 'yep')
     
     def test_processor(self):
-        self.install("@path('*')\n"
+        self.install("@path()\n"
                      "def process(req, r):\n"
                      "    body = 'Hey %s! You did a %s on %s!' % (\n"
                      "        req.headers['User-Agent'],\n"
@@ -125,7 +125,7 @@ class TurqTestCase(unittest.TestCase):
                          '10 bytes!')
     
     def test_cycle(self):
-        self.install("with path('*') as r:\n"
+        self.install("with path() as r:\n"
                      "    r.first().text('one')\n"
                      "    r.next().text('two')\n"
                      "    r.next().text('three')\n")
@@ -136,7 +136,7 @@ class TurqTestCase(unittest.TestCase):
         self.assertEqual(results, ['one', 'two', 'three', 'one', 'two'])
     
     def test_achieve_and_hold(self):
-        self.install("with path('*') as r:\n"
+        self.install("with path() as r:\n"
                      "    r.first().text('one')\n"
                      "    r.next().text('two')\n"
                      "    r.then().text('three')\n")
@@ -151,8 +151,8 @@ class TurqTestCase(unittest.TestCase):
         self.assert_('SyntaxError' in data)
     
     def test_server_and_date(self):
-        self.install("path('*').header('SERVER', 'Test-RuleSet/0.1'). \\\n"
-                     "    header('DATE', 'Sat, 17 Nov 2012 00:00:00 GMT')")
+        self.install("path().header('SERVER', 'Test-RuleSet/0.1'). \\\n"
+                     "       header('DATE', 'Sat, 17 Nov 2012 00:00:00 GMT')")
         info, data = self.request('GET', '/')
         self.assertEqual(info.msg['Server'], 'Test-RuleSet/0.1')
         self.assertEqual(info.msg['Date'], 'Sat, 17 Nov 2012 00:00:00 GMT')
