@@ -179,6 +179,12 @@ class TurqTestCase(unittest.TestCase):
         self.install("path().json(jsonp=False)")
         info, data = self.request('GET', '/?callback=callback')
         self.assertEqual(info.msg['Content-Type'], 'application/json')
+    
+    def test_overwrite_header(self):
+        self.install("path().header('X-Foo', 'bar')\n"
+                     "path('/sub').header('X-Foo', 'baz')")
+        info, data = self.request('GET', '/sub')
+        self.assertEqual(info.msg['X-Foo'], 'baz')
 
 
 if __name__ == '__main__':
