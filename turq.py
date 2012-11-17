@@ -15,6 +15,7 @@ from optparse import OptionParser
 import random
 import re
 import socket
+import string
 import sys
 import time
 import traceback
@@ -59,6 +60,38 @@ def make_text(bytes):
     return buf.getvalue()
 
 
+def html_escape(s):
+    return s.replace('&', '&amp;').replace('"', '&quot;'). \
+             replace('<', '&lt;').replace('>', '&gt;')
+
+
+class Cheat(object):
+    
+    items = []
+    
+    @staticmethod
+    def entry(args='', comment=''):
+        def decorator(func):
+            Cheat.items.append((func.__name__, args, comment))
+            return func
+        return decorator
+    
+    @staticmethod
+    def format():
+        code = (
+            '<p><code class="example">path(\'/products/*\').delay(1).html().'
+            'cookie(\'sessionid\', \'1234\', max_age=3600)</code></p>'
+            '<table><tbody>'
+        )
+        for name, args, comment in Cheat.items:
+            code += (
+                '<tr><th><code>%s(<span class="args">%s</span>)</code></th>'
+                '<td>%s</td></tr>' % (name, html_escape(args), comment)
+            )
+        code += '</tbody></table>'
+        return code
+
+
 class Rule(object):
     
     url_cache = {}
@@ -83,30 +116,37 @@ class Rule(object):
         self._allow = None
         self._gzip = False
     
+    @Cheat.entry('code')
     def status(self, code):
         self._status = code
         return self
     
+    @Cheat.entry('name, value, **params', 'params are appended as k=v pairs')
     def header(self, name, value, **params):
         self._headers.append(('set', name, value, params))
         return self
     
+    @Cheat.entry('name, value, **params', 'added, not replaced')
     def add_header(self, name, value, **params):
         self._headers.append(('add', name, value, params))
         return self
     
+    @Cheat.entry('data')
     def body(self, data):
         self._body = data
         return self
     
+    @Cheat.entry('path')
     def body_file(self, path):
         return self.body(open(path).read())
     
+    @Cheat.entry('url', 'data from <var>url</var> is cached until Turq exits')
     def body_url(self, url):
         if url not in Rule.url_cache:
             Rule.url_cache[url] = urllib2.urlopen(url).read()
         return self.body(Rule.url_cache[url])
     
+    @Cheat.entry('seconds')
     def delay(self, seconds):
         self._delay = seconds
         return self
@@ -115,15 +155,19 @@ class Rule(object):
         self._processor = proc
         return proc
     
+    @Cheat.entry('mime_type', 'content type')
     def ctype(self, value):
         return self.header('Content-Type', value)
     
+    @Cheat.entry('[text]', 'plain text')
     def text(self, text='Hello world!'):
         return self.ctype('text/plain; charset=utf-8').body(text)
     
+    @Cheat.entry('[bytes]', 'roughly <var>bytes</var> of plain text')
     def lots_of_text(self, bytes=20000):
         return self.text(make_text(bytes))
     
+    @Cheat.entry('[title], [text]', 'basic HTML page')
     def html(self, title='Hello world!', text='This is Turq!'):
         body = '''<!DOCTYPE html>
 <html>
@@ -137,25 +181,33 @@ class Rule(object):
 </html>''' % (title, title, text)
         return self.ctype('text/html; charset=utf-8').body(body)
     
+    @Cheat.entry('[bytes]', 'roughly <var>bytes</var> of HTML')
     def lots_of_html(self, bytes=20000, title='Hello world!'):
         return self.html(
             title=title,
             text=make_text(bytes - 100).replace('\n\n', '</p><p>')
         )
     
+    @Cheat.entry('[data]',
+                 'JSONP is handled automatically, '
+                 'pass <code>jsonp=False</code> to disable')
     def json(self, data={'result': 'turq'}, jsonp=True):
         self._enable_jsonp = jsonp
         return self.ctype('application/json').body(json.dumps(data))
     
-    def js(self):
+    @Cheat.entry('[code]', 'JavaScript')
+    def js(self, code='alert("Turq");'):
         return self.ctype('application/javascript')
     
+    @Cheat.entry('[code]')
     def xml(self, code='<turq></turq>'):
         return self.ctype('application/xml').body(code)
     
+    @Cheat.entry('location, [status=302]')
     def redirect(self, location, status=httplib.FOUND):
         return self.status(status).header('Location', location)
     
+    @Cheat.entry('name, value, [max_age], [path]...')
     def cookie(self, name, value, max_age=None, expires=None, path=None,
                secure=False, http_only=False):
         data = '%s=%s' % (name, value)
@@ -171,23 +223,28 @@ class Rule(object):
             data += '; HttpOnly'
         return self.add_header('Set-Cookie', data) 
     
+    @Cheat.entry('[realm]')
     def basic_auth(self, realm='Turq'):
         return self.status(httplib.UNAUTHORIZED). \
                     header('WWW-Authenticate', 'Basic realm="%s"' % realm)
     
+    @Cheat.entry('[realm], [nonce]')
     def digest_auth(self, realm='Turq', nonce='twasbrillig'):
         return self.status(httplib.UNAUTHORIZED). \
                     header('WWW-Authenticate',
                            'Digest realm="%s", nonce="%s"' % (realm, nonce))
     
+    @Cheat.entry('*methods', 'otherwise send 405 with a text error message')
     def allow(self, *methods):
         self._allow = set(m.lower() for m in methods)
         return self
     
+    @Cheat.entry()
     def cors(self):
         self._enable_cors = True
         return self.header('Access-Control-Allow-Origin', '*')
     
+    @Cheat.entry('when', '“10 minutes” or “5 h” or “1 day”')
     def expires(self, when):
         n, unit = when.split()
         n = int(n)
@@ -202,6 +259,7 @@ class Rule(object):
             raise ValueError('unknown expires format: "%s"' % when)
         return self.header('Expires', dt.strftime('%a, %d %b %Y %H:%M:%S GMT'))
     
+    @Cheat.entry()
     def gzip(self):
         self._gzip = True
         return self
@@ -316,13 +374,7 @@ def parse_rules(code):
     return rules
 
 
-def html_escape(s):
-    return s.replace('&', '&amp;').replace('"', '&quot;'). \
-             replace('<', '&lt;').replace('>', '&gt;')
-
-
-def render_console(code, okay='', error=''):
-    return '''
+CONSOLE_TPL = string.Template('''
 <!DOCTYPE html
     PUBLIC "-//W3C//DTD HTML 4.01//EN"
     "http://www.w3.org/TR/html4/strict.dtd">
@@ -337,23 +389,61 @@ def render_console(code, okay='', error=''):
                 document.getElementById('codeEntry').focus();
             };
         </script>
+        <style type="text/css">
+            body { margin: 2em; font-family: sans-serif; }
+            #error { color: #FF0000; }
+            #okay { color: #0E7C00; }
+            #codeEntry { width: 55%; }
+            .example { font-weight: bold; }
+            #cheat {
+                float: right;
+                margin-left: 3em;
+                width: 40%;
+                padding-bottom: 3em;
+            }
+            #cheat th {
+                text-align: left;
+                vertical-align: top;
+                padding-right: 0.5em;
+            }
+            #cheat th .args { font-weight: normal; }
+            #cheat td, th {
+                border-top: solid 1px #D8D8D8;
+                padding-top: 0.3em;
+                padding-bottom: 0.3em;
+            }
+            #cheat table { border-collapse: collapse; }
+        </style>
     </head>
     <body>
+        <div id="cheat">
+            <h2>Cheat sheet</h2>
+            $cheat
+        </div>
         <h1>Turq</h1>
-        <pre style="color: #FF0000">%s</pre>
+        <pre id="error">$error</pre>
         <form action="/+turq/" method="post">
             <div>
                 <pre><textarea id="codeEntry" name="code"
-                    rows="25" cols="80">%s</textarea></pre>
+                    rows="25" cols="80">$code</textarea></pre>
             </div>
             <div>
                 <input type="submit" value="Commit" accesskey="s">
-                <span id="okay" style="color: #0E7C00">%s</span>
+                <span id="okay" style="color: #0E7C00">$okay</span>
             </div>
         </form>
     </body>
 </html>
-''' % (html_escape(error), html_escape(code), html_escape(okay))
+''')
+
+
+def render_console(code, okay='', error=''):
+    return CONSOLE_TPL.substitute({
+        'code': code,
+        'okay': okay,
+        'error': error,
+        'cheat': Cheat.format()
+    })
 
 
 class TurqHandler(BaseHTTPServer.BaseHTTPRequestHandler):
