@@ -264,17 +264,20 @@ class Rule(object):
         self._gzip = True
         return self
     
+    @Cheat.entry('', 'begin a sub-rule for the first hit...')
     def first(self):
         sub = Rule()
         self._chain = [sub]
         return sub
     
+    @Cheat.entry('', '...the next hit...')
     def next(self):
         assert self._chain, 'next() without first()'
         sub = Rule()
         self._chain.append(sub)
         return sub
     
+    @Cheat.entry('', '...and all subsequent hits')
     def then(self):
         assert self._chain, 'then() without first()'
         self._final = Rule()
