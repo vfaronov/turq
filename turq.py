@@ -164,9 +164,10 @@ class Rule(object):
 
 class PathRule(Rule):
     
-    def __init__(self, path='*'):
+    def __init__(self, path='*', trailing_slash=True):
         self.regex = re.compile(
-            '^' + re.escape(path).replace('\\*', '.*') + '$')
+            '^' + re.escape(path).replace('\\*', '.*') +
+            ('/?' if trailing_slash else '') + '$')
         super(PathRule, self).__init__()
     
     def matches(self, req):
@@ -175,8 +176,8 @@ class PathRule(Rule):
 
 def parse_rules(code):
     rules = []
-    def path(*args):
-        rule = PathRule(*args)
+    def path(*args, **kwargs):
+        rule = PathRule(*args, **kwargs)
         rules.append(rule)
         return rule
     exec code in {'path': path}

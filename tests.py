@@ -90,6 +90,16 @@ class TurqTestCase(unittest.TestCase):
         self.assertEqual(info.msg['X-Foo'], 'bar')
         self.assertEqual(data, 'part two')
     
+    def test_allow_trailing_slash(self):
+        self.install("path('/foo').text('yep')")
+        info, data = self.request('GET', '/foo/')
+        self.assertEqual(data, 'yep')
+    
+    def test_forbid_trailing_slash(self):
+        self.install("path('/foo', trailing_slash=False).text('yep')")
+        info, data = self.request('GET', '/foo/')
+        self.assert_(not data)
+    
     def test_delay(self):
         self.install("path().delay(3).text('yep')")
         dt1 = datetime.now()
