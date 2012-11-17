@@ -43,11 +43,11 @@ class Response(object):
         self.headers.add_header(name, value, **params)
 
 
-def make_text(bytes):
+def make_text(nbytes):
     buf = StringIO()
     written = 0
     words = 'lorem ipsum dolor sit amet, consectetur adipisicing elit'.split()
-    while written < bytes:
+    while written < nbytes:
         word = random.choice(words)
         buf.write(word)
         written += len(word)
@@ -163,9 +163,9 @@ class Rule(object):
     def text(self, text='Hello world!'):
         return self.ctype('text/plain; charset=utf-8').body(text)
     
-    @Cheat.entry('[bytes]', 'roughly <var>bytes</var> of plain text')
-    def lots_of_text(self, bytes=20000):
-        return self.text(make_text(bytes))
+    @Cheat.entry('[nbytes]', 'roughly <var>nbytes</var> of plain text')
+    def lots_of_text(self, nbytes=20000):
+        return self.text(make_text(nbytes))
     
     @Cheat.entry('[title], [text]', 'basic HTML page')
     def html(self, title='Hello world!', text='This is Turq!'):
@@ -181,11 +181,11 @@ class Rule(object):
 </html>''' % (title, title, text)
         return self.ctype('text/html; charset=utf-8').body(body)
     
-    @Cheat.entry('[bytes]', 'roughly <var>bytes</var> of HTML')
-    def lots_of_html(self, bytes=20000, title='Hello world!'):
+    @Cheat.entry('[nbytes]', 'roughly <var>nbytes</var> of HTML')
+    def lots_of_html(self, nbytes=20000, title='Hello world!'):
         return self.html(
             title=title,
-            text=make_text(bytes - 100).replace('\n\n', '</p><p>')
+            text=make_text(nbytes - 100).replace('\n\n', '</p><p>')
         )
     
     @Cheat.entry('[data]',
@@ -290,7 +290,7 @@ class Rule(object):
         del resp[name]
         resp[name] = value
     
-    def apply_normal(self, req, resp):
+    def apply_normal(self, resp):
         if self._delay:
             time.sleep(self._delay)
         if self._status is not None:
@@ -298,7 +298,7 @@ class Rule(object):
         if self._body is not None:
             resp.body = self._body
     
-    def apply_headers(self, req, resp):
+    def apply_headers(self, resp):
         for op, name, value, params in self._headers:
             if op == 'set':
                 resp.set_header(name, value, **params)
@@ -333,7 +333,7 @@ class Rule(object):
                 resp.set_header('Content-Type', 'text/plain')
                 resp.body = 'Method %s not allowed here' % req.method
     
-    def apply_gzip(self, req, resp):
+    def apply_gzip(self, resp):
         if self._gzip and resp.body:
             zbuf = StringIO()
             zfile = gzip.GzipFile(fileobj=zbuf, mode='w')
@@ -343,12 +343,12 @@ class Rule(object):
             resp.set_header('Content-Encoding', 'gzip')
     
     def apply(self, req, resp):
-        self.apply_normal(req, resp)
-        self.apply_headers(req, resp)
+        self.apply_normal(resp)
+        self.apply_headers(resp)
         self.apply_jsonp(req, resp)
         self.apply_chain(req, resp)
         self.apply_allow(req, resp)
-        self.apply_gzip(req, resp)
+        self.apply_gzip(resp)
         self.apply_processor(req, resp)
 
 
@@ -530,7 +530,7 @@ class TurqHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.wfile.write(resp.body)
 
 
-if __name__ == '__main__':
+def main():
     parser = OptionParser(usage='usage: %prog [-p PORT]')
     parser.add_option('-p', '--port', dest='port', type='int',
                       default=DEFAULT_PORT,
@@ -545,4 +545,7 @@ if __name__ == '__main__':
         server.serve_forever()
     except KeyboardInterrupt:
         pass
+
+if __name__ == '__main__':
+    main()
 
