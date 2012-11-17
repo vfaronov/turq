@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+__version__ = '0.1.0'
+
 import BaseHTTPServer
 import collections
 from datetime import datetime, timedelta
+import email.message
 import httplib
 import json
 from optparse import OptionParser
@@ -22,7 +25,7 @@ class Response(object):
     
     def __init__(self):
         self.status = httplib.OK
-        self.headers = {}
+        self.headers = email.message.Message()   # case-insensitive field names
         self.body = None
 
 
@@ -140,7 +143,8 @@ class Rule(object):
             time.sleep(self._delay)
         if self._status is not None:
             resp.status = self._status
-        resp.headers.update(self._headers)
+        for name, value in self._headers.items():
+            resp.headers[name] = value
         if self._body is not None:
             resp.body = self._body
         
@@ -264,6 +268,9 @@ class TurqHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def parse_form(self):
         return urlparse.parse_qs(self.body)
     
+    def version_string(self):
+        return 'Turq/%s' % __version__
+    
     def do_console(self, method):
         okay = error = ''
         if method == 'POST':
@@ -288,9 +295,17 @@ class TurqHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         for rule in self.rules:
             if rule.matches(req):
                 rule.apply(req, resp)
+        
+        # Server and Date headers need special casing
+        if 'Server' in resp.headers:
+            self.version_string = lambda *args: resp.headers['Server']
+        if 'Date' in resp.headers:
+            self.date_time_string = lambda *args: resp.headers['Date']
+        
         self.send_response(resp.status)
         for name, value in resp.headers.items():
-            self.send_header(name, value)
+            if name.lower() not in ('server', 'date'):
+                self.send_header(name, value)
         self.end_headers()
         if resp.body and (method != 'HEAD'):
             self.wfile.write(resp.body)

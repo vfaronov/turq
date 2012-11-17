@@ -149,6 +149,13 @@ class TurqTestCase(unittest.TestCase):
     def test_syntax_error(self):
         info, data = self.install("path('*).text()", check=False)
         self.assert_('SyntaxError' in data)
+    
+    def test_server_and_date(self):
+        self.install("path('*').header('SERVER', 'Test-RuleSet/0.1'). \\\n"
+                     "    header('DATE', 'Sat, 17 Nov 2012 00:00:00 GMT')")
+        info, data = self.request('GET', '/')
+        self.assertEqual(info.msg['Server'], 'Test-RuleSet/0.1')
+        self.assertEqual(info.msg['Date'], 'Sat, 17 Nov 2012 00:00:00 GMT')
 
 
 if __name__ == '__main__':
