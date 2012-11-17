@@ -43,7 +43,7 @@ class TurqTestCase(unittest.TestCase):
         )
         self.assertEqual(info.status, httplib.OK)
         if check:
-            self.assert_('okay' in data)
+            self.assert_('>okay<' in data)
         return info, data
     
     def test_status(self):
@@ -101,9 +101,28 @@ class TurqTestCase(unittest.TestCase):
     def test_processor(self):
         self.install("@path('*')\n"
                      "def process(req, r):\n"
-                     "    r.text('You did a %s!' % req.method)\n")
-        info, data = self.request('PROPPATCH', '/')
-        self.assertEqual(data, 'You did a PROPPATCH!')
+                     "    body = 'Hey %s! You did a %s on %s!' % (\n"
+                     "        req.headers['User-Agent'],\n"
+                     "        req.method, req.path)\n"
+                     "    if 'id' in req.query:\n"
+                     "        body += ' You requested item %s!' % (\n"
+                     "            req.query['id'][0])\n"
+                     "    if req.body:\n"
+                     "        body += ' %d bytes!' % len(req.body)\n"
+                     "    r.text(body)\n")
+        
+        info, data = self.request('GET', '/foo/?id=67&bar=yes',
+                                  {'User-agent': 'test suite'})
+        self.assertEqual(data,
+                         'Hey test suite! You did a GET on /foo/! '
+                         'You requested item 67!')
+        
+        info, data = self.request('POST', '/bar/baz',
+                                  {'User-Agent': 'test suite'},
+                                  'quux=xyzzy')
+        self.assertEqual(data,
+                         'Hey test suite! You did a POST on /bar/baz! '
+                         '10 bytes!')
     
     def test_cycle(self):
         self.install("with path('*') as r:\n"

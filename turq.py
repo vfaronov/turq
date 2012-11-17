@@ -15,7 +15,8 @@ import traceback
 import urlparse
 
 
-Request = collections.namedtuple('Request', ('method', 'path', 'headers'))
+Request = collections.namedtuple(
+    'Request', ('method', 'path', 'query', 'headers', 'body'))
 
 class Response(object):
     
@@ -236,6 +237,24 @@ class TurqHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def path_without_query(self):
         return self.path.split('?')[0]
     
+    @property
+    def query(self):
+        parts = self.path.split('?')
+        if len(parts) > 1:
+            q = parts[1]
+            try:
+                q = urlparse.parse_qs(q)
+            except Exception:
+                q = urlparse.parse_qs('')       # so it's still iterable
+            return q
+        else:
+            return urlparse.parse_qs('')
+    
+    @property
+    def body(self):
+        if 'Content-Length' in self.headers:
+            return self.rfile.read(int(self.headers['Content-Length']))
+    
     def do(self, method):
         if self.path_without_query == '/+turq/':
             self.do_console(method)
@@ -243,21 +262,18 @@ class TurqHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.do_mock(method)
     
     def parse_form(self):
-        data = self.rfile.read(int(self.headers['Content-Length']))
-        return urlparse.parse_qs(data)
+        return urlparse.parse_qs(self.body)
     
     def do_console(self, method):
         okay = error = ''
         if method == 'POST':
-            sys.stderr.write('\nLoading rules from console...')
             try:
                 form = self.parse_form()
                 code = form.get('code', [''])[0].replace('\r\n', '\n')
                 self.install_code(code)
-                sys.stderr.write(' OK\n\n')
+                sys.stderr.write('--- New rules posted and activated ---\n')
                 okay = 'okay'
             except Exception:
-                sys.stderr.write(' error\n\n')
                 error = traceback.format_exc()
         
         self.send_response(httplib.OK)
@@ -266,7 +282,8 @@ class TurqHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.wfile.write(render_console(self.code, okay, error))
     
     def do_mock(self, method):
-        req = Request(method, self.path_without_query, self.headers)
+        req = Request(method, self.path_without_query, self.query,
+                      self.headers, self.body)
         resp = Response()
         for rule in self.rules:
             if rule.matches(req):
