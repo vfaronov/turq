@@ -431,7 +431,7 @@ CONSOLE_TPL = string.Template('''
             </div>
             <div>
                 <input type="submit" value="Commit" accesskey="s">
-                <span id="okay" style="color: #0E7C00">$okay</span>
+                <span id="okay">$okay</span>
             </div>
         </form>
         <p><a href="https://github.com/vfaronov/turq">Turq</a> $version</p>
