@@ -523,7 +523,10 @@ CONSOLE_TPL = string.Template('''
                 <span id="okay">$okay</span>
             </div>
         </form>
-        <p><a href="https://github.com/vfaronov/turq">Turq</a> $version</p>
+        <p>
+            <a href="https://github.com/vfaronov/turq">Turq</a> $version ·
+            <a href="https://turq.readthedocs.org/">docs</a>
+        </p>
     </body>
 </html>
 ''')

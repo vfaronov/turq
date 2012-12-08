@@ -55,3 +55,5 @@ Serve XML from ``/product.xml``, reflecting the passed ``id`` parameter::
     def process(req, r):
         r.xml('<product><id>%s</id></product>' % req.query['id'][0])
 
+For more, see the `complete documentation <https://turq.readthedocs.org/>`_.
+
