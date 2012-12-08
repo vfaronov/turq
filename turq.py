@@ -11,6 +11,7 @@ import gzip
 import httplib
 import json
 from optparse import OptionParser
+import os.path
 import random
 import re
 import socket
@@ -195,8 +196,10 @@ class Rule(object):
     def body_file(self, path):
         """Set response entity body to the contents of `path`.
         
-        The file at `path` is read when the rules are posted."""
-        return self.body(open(path).read())
+        The file at `path` is read when the rules are posted.
+        `path` undergoes tilde expansion.
+        """
+        return self.body(open(os.path.expanduser(path)).read())
     
     @Cheat.entry('url', 'data from <var>url</var> is cached until Turq exits')
     def body_url(self, url):
