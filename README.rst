@@ -49,6 +49,12 @@ Imitate round-robin balancing between three backends, one of which is slow::
         r.next().html()
         r.next().delay(5).html()
 
+Simulate an intermittent error::
+
+    with path() as r:
+        r.maybe().status(502).text('Bad Gateway')
+        r.otherwise().html()
+
 Serve XML from ``/product.xml``, reflecting the passed ``id`` parameter::
 
     @path('/product.xml')

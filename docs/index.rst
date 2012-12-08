@@ -137,6 +137,27 @@ For example, here, we send a custom ``Server`` header with every response::
         r.next().text('bar')
 
 
+Stochastic responses
+~~~~~~~~~~~~~~~~~~~~
+Whereas :meth:`~Rule.first` et al. are deterministic,
+the :meth:`~Rule.maybe` call adds a stochastic dimension to the response.
+
+.. automethod:: Rule.maybe(probability=0.1)
+.. automethod:: Rule.otherwise
+
+This can be used to imitate occasional errors::
+
+    with path() as r:
+        r.maybe().status(502).text('Bad Gateway')
+        r.otherwise().html()
+
+Probabilities don’t have to cover everything::
+
+    with path() as r:
+        r.html(text='Welcome to our site!')
+        r.maybe(0.01).cookie('evilTracking', '12345')
+
+
 Limitations
 ~~~~~~~~~~~
 Turq does not provide full control over the HTTP exchange on the wire.

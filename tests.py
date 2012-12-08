@@ -243,6 +243,22 @@ class TurqTestCase(unittest.TestCase):
         info, data = self.request('GET', '/')
         self.assert_(data.count('<p') > 10)
         self.assert_(abs(len(data) - 30000) <= 300)
+    
+    def test_maybe(self):
+        self.install("with path() as r:\n"
+                     "    r.maybe(0.3).text('foo')\n"
+                     "    r.maybe(0.1).text('bar')\n"
+                     "    r.otherwise().text('baz')\n")
+        foo_count = baz_count = 0
+        for i in xrange(100):
+            info, data = self.request('GET', '/')
+            self.assert_(data in ('foo', 'bar', 'baz'))
+            if data == 'foo':
+                foo_count += 1
+            elif data == 'baz':
+                baz_count += 1
+        self.assert_(20 <= foo_count <= 40)
+        self.assert_(50 <= baz_count <= 70)
 
 
 if __name__ == '__main__':

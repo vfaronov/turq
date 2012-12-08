@@ -111,6 +111,7 @@ class Rule(object):
         self._chain = []
         self._final = None
         self._counter = 0
+        self._maybe = []
         self._enable_cors = False
         self._enable_jsonp = False
         self._allow = None
@@ -372,6 +373,26 @@ class Rule(object):
         self._final = Rule()
         return self._final
     
+    @Cheat.entry('[probability]', 'start a stochastic sub-rule')
+    def maybe(self, probability=0.1):
+        """Add a sub-rule that will be applied with `probability`."""
+        assert probability > 0
+        sub = Rule()
+        self._maybe.append((sub, probability))
+        assert sum(p for s, p in self._maybe) <= 1
+        return sub
+    
+    @Cheat.entry('', 'complement all <code>maybe</code>s')
+    def otherwise(self):
+        """Add a sub-rule that complements all :meth:`~Rule.maybe` rules.
+        
+        This is just a shortcut
+        that adds a `maybe` sub-rule
+        with a probability equal to 1 minus all currently defined `maybe`.
+        Thus, it must come after all `maybe`.
+        """
+        return self.maybe(1 - sum(p for s, p in self._maybe))
+    
     def __enter__(self):
         return self
     
@@ -408,6 +429,15 @@ class Rule(object):
             self._chain[self._counter].apply(req, resp)
             self._counter += 1
     
+    def apply_maybe(self, req, resp):
+        x = random.random()
+        pos = 0
+        for sub, prob in self._maybe:
+            pos += prob
+            if x < pos:
+                sub.apply(req, resp)
+                return
+    
     def apply_processor(self, req, resp):
         if self._processor is not None:
             sub = Rule()
@@ -435,6 +465,7 @@ class Rule(object):
         self.apply_headers(resp)
         self.apply_jsonp(req, resp)
         self.apply_chain(req, resp)
+        self.apply_maybe(req, resp)
         self.apply_allow(req, resp)
         self.apply_gzip(resp)
         self.apply_processor(req, resp)
