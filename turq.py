@@ -378,10 +378,6 @@ class Rule(object):
     def __exit__(self, *args):
         return False
     
-    def _set_header(self, resp, name, value):
-        del resp[name]
-        resp[name] = value
-    
     def apply_normal(self, resp):
         if self._delay:
             time.sleep(self._delay)
