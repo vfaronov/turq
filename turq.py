@@ -118,36 +118,65 @@ class Rule(object):
     
     @Cheat.entry('code')
     def status(self, code):
+        """Set response status to `code`."""
         self._status = code
         return self
     
     @Cheat.entry('name, value, **params', 'params are appended as k=v pairs')
     def header(self, name, value, **params):
+        """Set response header `name` to `value`.
+        
+        If `params` are specified, they are appended as k=v pairs.
+        For example::
+        
+            header('Content-Type', 'text/html', charset='utf-8')
+        
+        produces::
+        
+            Content-Type: text/html; charset="utf-8"
+        """
         self._headers.append(('set', name, value, params))
         return self
     
     @Cheat.entry('name, value, **params', 'added, not replaced')
     def add_header(self, name, value, **params):
+        """Same as :meth:`~Rule.header`, but add the header, not replace it.
+        
+        This can be used to send multiple headers with the same name,
+        such as ``Via`` or ``Set-Cookie``
+        (but for the latter see :meth:`~Rule.cookie`).
+        """
         self._headers.append(('add', name, value, params))
         return self
     
     @Cheat.entry('data')
     def body(self, data):
+        """Set response entity body to `data`."""
         self._body = data
         return self
     
     @Cheat.entry('path')
     def body_file(self, path):
+        """Set response entity body to the contents of `path`.
+        
+        The file at `path` is read when the rules are posted."""
         return self.body(open(path).read())
     
     @Cheat.entry('url', 'data from <var>url</var> is cached until Turq exits')
     def body_url(self, url):
+        """Set response entity body to the contents of `url`.
+        
+        The resource at `url` is fetched once and cached until Turq exits.
+        Note that this method only sets the entity body.
+        HTTP status and headers are not copied from `url`.
+        """
         if url not in Rule.url_cache:
             Rule.url_cache[url] = urllib2.urlopen(url).read()
         return self.body(Rule.url_cache[url])
     
     @Cheat.entry('seconds')
     def delay(self, seconds):
+        """Delay for `seconds` before serving the response."""
         self._delay = seconds
         return self
     
@@ -157,18 +186,29 @@ class Rule(object):
     
     @Cheat.entry('mime_type', 'content type')
     def ctype(self, value):
+        """Set response ``Content-Type`` to `value`."""
         return self.header('Content-Type', value)
     
     @Cheat.entry('[text]', 'plain text')
     def text(self, text='Hello world!'):
+        """Set up a ``text/plain`` response."""
         return self.ctype('text/plain; charset=utf-8').body(text)
     
     @Cheat.entry('[nbytes]', 'roughly <var>nbytes</var> of plain text')
     def lots_of_text(self, nbytes=20000):
+        """Set up a ``text/plain`` response with lots of text.
+        
+        Lines of dummy text will be generated
+        so that the entity body is very roughly `nbytes` in length.
+        """
         return self.text(make_text(nbytes))
     
     @Cheat.entry('[title], [text]', 'basic HTML page')
     def html(self, title='Hello world!', text='This is Turq!'):
+        """Set up a ``text/html`` response.
+        
+        A basic HTML page with `title` and a paragraph of `text` is served.
+        """
         body = '''<!DOCTYPE html>
 <html>
     <head>
@@ -183,6 +223,10 @@ class Rule(object):
     
     @Cheat.entry('[nbytes]', 'roughly <var>nbytes</var> of HTML')
     def lots_of_html(self, nbytes=20000, title='Hello world!'):
+        """Set up a ``text/html`` response with lots of text.
+        
+        Like :meth:`~Rule.lots_of_text`, but wrapped in HTML paragraphs.
+        """
         return self.html(
             title=title,
             text=make_text(nbytes - 100).replace('\n\n', '</p><p>')
@@ -192,24 +236,42 @@ class Rule(object):
                  'JSONP is handled automatically, '
                  'pass <code>jsonp=False</code> to disable')
     def json(self, data={'result': 'turq'}, jsonp=True):
+        """Set up a JSON or JSONP response.
+        
+        `data` will be serialized into an ``application/json`` entity body.
+        But if the request has a ``callback`` query parameter,
+        `data` will be wrapped into a JSONP callback
+        and served as ``application/javascript``,
+        unless you set `jsonp` to `False`.
+        """
         self._enable_jsonp = jsonp
         return self.ctype('application/json').body(json.dumps(data))
     
     @Cheat.entry('[code]', 'JavaScript')
     def js(self, code='alert("Turq");'):
+        """Set up an ``application/javascript`` response."""
         return self.ctype('application/javascript').body(code)
     
     @Cheat.entry('[code]')
     def xml(self, code='<turq></turq>'):
+        """Set up an ``application/xml`` response."""
         return self.ctype('application/xml').body(code)
     
     @Cheat.entry('location, [status=302]')
     def redirect(self, location, status=httplib.FOUND):
+        """Set up a redirection response."""
         return self.status(status).header('Location', location)
     
     @Cheat.entry('name, value, [max_age], [path]...')
     def cookie(self, name, value, max_age=None, expires=None, path=None,
                secure=False, http_only=False):
+        """Add a cookie `name` with `value`.
+        
+        The other arguments
+        correspond to parameters of the ``Set-Cookie`` header.
+        If specified, `max_age` and `expires` should be strings.
+        Nothing is escaped.
+        """
         data = '%s=%s' % (name, value)
         if max_age is not None:
             data += '; Max-Age=%s' % max_age
@@ -225,27 +287,47 @@ class Rule(object):
     
     @Cheat.entry('[realm]')
     def basic_auth(self, realm='Turq'):
+        """Demand HTTP basic authentication (status code 401)."""
         return self.status(httplib.UNAUTHORIZED). \
                     header('WWW-Authenticate', 'Basic realm="%s"' % realm)
     
     @Cheat.entry('[realm], [nonce]')
     def digest_auth(self, realm='Turq', nonce='twasbrillig'):
+        """Demand HTTP digest authentication (status code 401)."""
         return self.status(httplib.UNAUTHORIZED). \
                     header('WWW-Authenticate',
                            'Digest realm="%s", nonce="%s"' % (realm, nonce))
     
     @Cheat.entry('*methods', 'otherwise send 405 with a text error message')
     def allow(self, *methods):
+        """Check the request method to be one of `methods` (case-insensitive).
+        
+        If it isn’t, send 405 Method Not Allowed
+        with a plain-text error message.
+        """
         self._allow = set(m.lower() for m in methods)
         return self
     
     @Cheat.entry()
     def cors(self):
+        """Enable `CORS <http://www.w3.org/TR/cors/>`_ on the response.
+        
+        Currently this just sets ``Access-Control-Allow-Origin: *``.
+        Preflight requests are not yet handled.
+        """
         self._enable_cors = True
         return self.header('Access-Control-Allow-Origin', '*')
     
     @Cheat.entry('when', '“10 minutes” or “5 h” or “1 day”')
     def expires(self, when):
+        """Set the expiration time of the response.
+        
+        `when` should be a specification
+        of the number of minutes, hours or days,
+        counted from the moment the rules are posted.
+        Supported formats are: “10 min” or “10 minutes” or “5 h” or “5 hours”
+        or “1 d” or “1 day”.
+        """
         n, unit = when.split()
         n = int(n)
         dt = datetime.utcnow()
@@ -261,17 +343,23 @@ class Rule(object):
     
     @Cheat.entry()
     def gzip(self):
+        """Apply ``Content-Encoding: gzip`` to the entity body.
+        
+        ``Accept-Encoding`` of the request is ignored.
+        """
         self._gzip = True
         return self
     
     @Cheat.entry('', 'begin a sub-rule for the first hit...')
     def first(self):
+        """Add a sub-rule that will be applied on a first request."""
         sub = Rule()
         self._chain = [sub]
         return sub
     
     @Cheat.entry('', '...the next hit...')
     def next(self):
+        """Add a sub-rule that will be applied on a subsequent request."""
         assert self._chain, 'next() without first()'
         sub = Rule()
         self._chain.append(sub)
@@ -279,6 +367,7 @@ class Rule(object):
     
     @Cheat.entry('', '...and all subsequent hits')
     def then(self):
+        """Add a sub-rule that will be applied on all subsequent requests."""
         assert self._chain, 'then() without first()'
         self._final = Rule()
         return self._final
