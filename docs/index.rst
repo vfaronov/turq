@@ -158,6 +158,33 @@ Probabilities don’t have to cover everything::
         r.maybe(0.01).cookie('evilTracking', '12345')
 
 
+Parametrized responses
+~~~~~~~~~~~~~~~~~~~~~~
+Sometimes you need the response to depend on the request.
+For example, suppose you have some crawler
+that fetches product info
+and expects the response to contain the requested product ID.
+You can do it easily with Turq::
+
+    path('/products').json(lambda req: {'id': req.query['id']})
+
+Most rule elements that accept a simple value will also accept a function.
+The function is called with a :class:`Request` object as the only argument.
+
+.. autoclass:: Request
+
+If you need even more logic,
+you can provide a custom handler function,
+attaching it to the rule by using the rule as a decorator::
+
+    @path('/products')
+    def process(req, r):
+        if req.query['id'].startswith('SCR31-'):
+            r.status(403).text('access to product info denied')
+        else:
+            r.json({'id': req.query['id']})
+
+
 Limitations
 ~~~~~~~~~~~
 Turq does not provide full control over the HTTP exchange on the wire.

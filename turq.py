@@ -4,7 +4,6 @@
 __version__ = '0.1.0'
 
 import BaseHTTPServer
-import collections
 from cStringIO import StringIO
 from datetime import datetime, timedelta
 import email.message
@@ -25,8 +24,45 @@ import urlparse
 
 DEFAULT_PORT = 13085
 
-Request = collections.namedtuple(
-    'Request', ('method', 'path', 'query', 'headers', 'body'))
+class Request(object):
+    
+    """An HTTP request.
+    
+    .. attribute:: method
+       
+       Request method.
+    
+    .. attribute:: path
+       
+       The request path, excluding the query string.
+    
+    .. attribute:: query
+       
+       A dictionary of parameters parsed from the query string.
+       An empty dictionary if none can be parsed.
+    
+    .. attribute:: headers
+       
+       An ``rfc822.Message``-like mapping of request headers.
+    
+    .. attribute:: body
+       
+       Request entity body as a `str` if there is one, otherwise `None`.
+    """
+    
+    def __init__(self, method, path, query, headers, body):
+        self.method = method
+        self.path = path
+        self.query = query
+        self.headers = headers
+        self.body = body
+    
+    def p(self, x):
+        if callable(x):
+            return x(self)
+        else:
+            return x
+
 
 class Response(object):
     
@@ -113,7 +149,6 @@ class Rule(object):
         self._counter = 0
         self._maybe = []
         self._enable_cors = False
-        self._enable_jsonp = False
         self._allow = None
         self._gzip = False
     
@@ -210,7 +245,8 @@ class Rule(object):
         
         A basic HTML page with `title` and a paragraph of `text` is served.
         """
-        body = '''<!DOCTYPE html>
+        return self.ctype('text/html; charset=utf-8').body(lambda req: (
+            '''<!DOCTYPE html>
 <html>
     <head>
         <title>%s</title>
@@ -219,8 +255,8 @@ class Rule(object):
         <h1>%s</h1>
         <p>%s</p>
     </body>
-</html>''' % (title, title, text)
-        return self.ctype('text/html; charset=utf-8').body(body)
+</html>''' % (req.p(title), req.p(title), req.p(text))
+        ))
     
     @Cheat.entry('[nbytes]', 'roughly <var>nbytes</var> of HTML')
     def lots_of_html(self, nbytes=20000, title='Hello world!'):
@@ -245,8 +281,15 @@ class Rule(object):
         and served as ``application/javascript``,
         unless you set `jsonp` to `False`.
         """
-        self._enable_jsonp = jsonp
-        return self.ctype('application/json').body(json.dumps(data))
+        self.ctype(lambda req: 'application/javascript'
+                               if jsonp and 'callback' in req.query
+                               else 'application/json')
+        self.body(lambda req: (
+            '%s(%s);' % (req.query['callback'], json.dumps(req.p(data)))
+            if jsonp and 'callback' in req.query
+            else json.dumps(req.p(data))
+        ))
+        return self
     
     @Cheat.entry('[code]', 'JavaScript')
     def js(self, code='alert("Turq");'):
@@ -273,31 +316,40 @@ class Rule(object):
         If specified, `max_age` and `expires` should be strings.
         Nothing is escaped.
         """
-        data = '%s=%s' % (name, value)
-        if max_age is not None:
-            data += '; Max-Age=%s' % max_age
-        if expires is not None:
-            data += '; Expires=%s' % expires
-        if path is not None:
-            data += '; Path=%s' % path
-        if secure:
-            data += '; Secure'
-        if http_only:
-            data += '; HttpOnly'
-        return self.add_header('Set-Cookie', data) 
+        def cookie_string(req):
+            data = '%s=%s' % (req.p(name), req.p(value))
+            if max_age is not None:
+                data += '; Max-Age=%s' % req.p(max_age)
+            if expires is not None:
+                data += '; Expires=%s' % req.p(expires)
+            if path is not None:
+                data += '; Path=%s' % req.p(path)
+            if secure:
+                data += '; Secure'
+            if http_only:
+                data += '; HttpOnly'
+            return data
+        return self.add_header('Set-Cookie', cookie_string)
     
     @Cheat.entry('[realm]')
     def basic_auth(self, realm='Turq'):
         """Demand HTTP basic authentication (status code 401)."""
-        return self.status(httplib.UNAUTHORIZED). \
-                    header('WWW-Authenticate', 'Basic realm="%s"' % realm)
+        self.status(httplib.UNAUTHORIZED)
+        self.header('WWW-Authenticate',
+                    lambda req: 'Basic realm="%s"' % req.p(realm))
+        return self
     
     @Cheat.entry('[realm], [nonce]')
     def digest_auth(self, realm='Turq', nonce='twasbrillig'):
         """Demand HTTP digest authentication (status code 401)."""
-        return self.status(httplib.UNAUTHORIZED). \
-                    header('WWW-Authenticate',
-                           'Digest realm="%s", nonce="%s"' % (realm, nonce))
+        self.status(httplib.UNAUTHORIZED)
+        self.header(
+            'WWW-Authenticate',
+            lambda req: 'Digest realm="%s", nonce="%s"' % (
+                req.p(realm), req.p(nonce)
+            )
+        )
+        return self
     
     @Cheat.entry('*methods', 'otherwise send 405 with a text error message')
     def allow(self, *methods):
@@ -399,25 +451,20 @@ class Rule(object):
     def __exit__(self, *args):
         return False
     
-    def apply_normal(self, resp):
-        if self._delay:
-            time.sleep(self._delay)
+    def apply_normal(self, req, resp):
+        if self._delay is not None:
+            time.sleep(req.p(self._delay))
         if self._status is not None:
-            resp.status = self._status
+            resp.status = req.p(self._status)
         if self._body is not None:
-            resp.body = self._body
+            resp.body = req.p(self._body)
     
-    def apply_headers(self, resp):
+    def apply_headers(self, req, resp):
         for op, name, value, params in self._headers:
             if op == 'set':
-                resp.set_header(name, value, **params)
+                resp.set_header(req.p(name), req.p(value), **params)
             elif op == 'add':
-                resp.add_header(name, value, **params)
-    
-    def apply_jsonp(self, req, resp):
-        if self._enable_jsonp and ('callback' in req.query):
-            resp.body = '%s(%s);' % (req.query['callback'][0], resp.body)
-            resp.set_header('Content-Type', 'application/javascript')
+                resp.add_header(req.p(name), req.p(value), **params)
     
     def apply_chain(self, req, resp):
         if self._counter >= len(self._chain):
@@ -451,7 +498,7 @@ class Rule(object):
                 resp.set_header('Content-Type', 'text/plain')
                 resp.body = 'Method %s not allowed here' % req.method
     
-    def apply_gzip(self, resp):
+    def apply_gzip(self, req, resp):
         if self._gzip and resp.body:
             zbuf = StringIO()
             zfile = gzip.GzipFile(fileobj=zbuf, mode='w')
@@ -461,13 +508,12 @@ class Rule(object):
             resp.set_header('Content-Encoding', 'gzip')
     
     def apply(self, req, resp):
-        self.apply_normal(resp)
-        self.apply_headers(resp)
-        self.apply_jsonp(req, resp)
+        self.apply_normal(req, resp)
+        self.apply_headers(req, resp)
         self.apply_chain(req, resp)
         self.apply_maybe(req, resp)
         self.apply_allow(req, resp)
-        self.apply_gzip(resp)
+        self.apply_gzip(req, resp)
         self.apply_processor(req, resp)
 
 
@@ -591,9 +637,9 @@ class TurqHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 q = urlparse.parse_qs(q)
             except Exception:
                 q = urlparse.parse_qs('')       # so it's still iterable
-            return q
         else:
-            return urlparse.parse_qs('')
+            q = urlparse.parse_qs('')
+        return dict((k, v[0]) for k, v in q.items())
     
     @property
     def body(self):

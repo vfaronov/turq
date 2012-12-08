@@ -132,7 +132,7 @@ class TurqTestCase(unittest.TestCase):
                      "        req.method, req.path)\n"
                      "    if 'id' in req.query:\n"
                      "        body += ' You requested item %s!' % (\n"
-                     "            req.query['id'][0])\n"
+                     "            req.query['id'])\n"
                      "    if req.body:\n"
                      "        body += ' %d bytes!' % len(req.body)\n"
                      "    r.text(body)\n")
@@ -259,6 +259,52 @@ class TurqTestCase(unittest.TestCase):
                 baz_count += 1
         self.assert_(20 <= foo_count <= 40)
         self.assert_(50 <= baz_count <= 70)
+    
+    def test_lambda_status(self):
+        self.install("with path() as r:\n"
+                     "    r.status(lambda req: int(req.query['st']))\n")
+        info, data = self.request('GET', '/?st=404')
+        self.assertEqual(info.status, 404)
+        info, data = self.request('GET', '/?st=501')
+        self.assertEqual(info.status, 501)
+    
+    def test_lambda_header(self):
+        self.install("with path() as r:\n"
+                     "    r.header('Server',\n"
+                     "             lambda req: 'Foo/' + req.query['ver'])")
+        info, data = self.request('GET', '/?ver=0.4.6')
+        self.assertEqual(info.msg['Server'], 'Foo/0.4.6')
+    
+    def test_lambda_body(self):
+        self.install("with path() as r:\n"
+                     "    r.body(lambda req: 'Hello ' + req.query['name'])")
+        info, data = self.request('GET', '/?name=world')
+        self.assertEqual(data, 'Hello world')
+    
+    def test_lambda_json(self):
+        self.install("with path() as r:\n"
+                     "    r.json(lambda req: {'id': req.query['id']})")
+        info, data = self.request('GET', '/?id=foo')
+        self.assertEqual(data, '{"id": "foo"}')
+    
+    def test_lambda_html(self):
+        self.install("with path() as r:\n"
+                     "    r.html(title=lambda req: req.query['q'])")
+        info, data = self.request('GET', '/?q=bar')
+        self.assert_('<title>bar</title>' in data)
+    
+    def test_lambda_cookie(self):
+        self.install("with path() as r:\n"
+                     "    r.cookie('foo', 'bar', path=lambda req: req.path)")
+        info, data = self.request('GET', '/quux/')
+        self.assertEqual(info.msg['Set-Cookie'], 'foo=bar; Path=/quux/')
+    
+    def test_lambda_auth(self):
+        self.install("with path() as r:\n"
+                     "    r.basic_auth(realm=lambda req: req.query['r'])")
+        info, data = self.request('GET', '/?r=somewhere')
+        self.assertEqual(info.msg['WWW-Authenticate'],
+                         'Basic realm="somewhere"')
 
 
 if __name__ == '__main__':

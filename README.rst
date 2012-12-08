@@ -56,10 +56,10 @@ Simulate an intermittent error::
         r.otherwise().html()
 
 Serve XML from ``/product.xml``, reflecting the passed ``id`` parameter::
-
-    @path('/product.xml')
-    def process(req, r):
-        r.xml('<product><id>%s</id></product>' % req.query['id'][0])
+    
+    path('/product.xml').xml(
+        lambda req: '<product><id>%s</id></product>' % req.query['id']
+    )
 
 For more, see the `complete documentation <https://turq.readthedocs.org/>`_.
 
