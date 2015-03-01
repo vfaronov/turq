@@ -702,16 +702,19 @@ class TurqHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
 
 def main():
-    parser = OptionParser(usage='usage: %prog [-p PORT]')
+    parser = OptionParser(usage='usage: %prog [-p PORT] [--host HOST]')
     parser.add_option('-p', '--port', dest='port', type='int',
                       default=DEFAULT_PORT,
                       help='listen on PORT', metavar='PORT')
+    parser.add_option('', '--host', dest='host',
+                      default=DEFAULT_HOST,
+                      help='listen on HOST', metavar='HOST')
     options, args = parser.parse_args()
     
-    server = BaseHTTPServer.HTTPServer(('0.0.0.0', options.port), TurqHandler)
+    server = BaseHTTPServer.HTTPServer((options.host, options.port), TurqHandler)
     sys.stderr.write('Listening on port %d\n' % server.server_port)
     sys.stderr.write('Try http://%s:%d/+turq/\n' %
-                     (socket.getfqdn(), server.server_port))
+                     (options.host == DEFAULT_HOST and socket.getfqdn() or options.host, server.server_port))
     try:
         server.serve_forever()
     except KeyboardInterrupt:
