@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
-from cStringIO import StringIO
+from six import StringIO
 from datetime import datetime, timedelta
 import gzip
-import httplib
+from six.moves import http_client
 import socket
 import subprocess
 import time
 import unittest
-import urllib
+from six.moves.urllib.parse import urlencode
 
 socket.setdefaulttimeout(5)
 
@@ -20,17 +20,17 @@ class TurqTestCase(unittest.TestCase):
             # exec prevents the shell from spawning a subprocess
             # which then fails to terminate.
             # http://stackoverflow.com/questions/4789837/
-            'exec python turq.py', shell=True,
+            'exec python turq.py --host 127.0.0.1', shell=True,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        time.sleep(0.2)
-    
+        time.sleep(0.5)
+
     def tearDown(self):
         self.proc.kill()
         self.proc.wait()
         time.sleep(0.2)
     
     def request(self, method, path, headers=None, body=None):
-        conn = httplib.HTTPConnection('127.0.0.1', 13085)
+        conn = http_client.HTTPConnection('127.0.0.1', 13085)
         conn.request(method, path, body, headers or {})
         resp = conn.getresponse()
         return resp, resp.read()
@@ -39,9 +39,9 @@ class TurqTestCase(unittest.TestCase):
         info, data = self.request(
             'POST', '/+turq/',
             {'Content-Type': 'application/x-www-form-urlencoded'},
-            urllib.urlencode({'code': code})
+            urlencode({'code': code})
         )
-        self.assertEqual(info.status, httplib.OK)
+        self.assertEqual(info.status, http_client.OK)
         if check:
             self.assert_('>okay<' in data)
         return info, data
@@ -223,7 +223,7 @@ class TurqTestCase(unittest.TestCase):
         info, data = self.request('GET', '/')
         self.assertEqual(data, 'fine!')
         info, data = self.request('DELETE', '/')
-        self.assertEqual(info.status, httplib.METHOD_NOT_ALLOWED)
+        self.assertEqual(info.status, http_client.METHOD_NOT_ALLOWED)
     
     def test_gzip(self):
         self.install("path().text('compress this!').gzip()")

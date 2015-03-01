@@ -3,12 +3,10 @@
 
 __version__ = '0.2.0'
 
-import BaseHTTPServer
-from cStringIO import StringIO
+import sys
 from datetime import datetime, timedelta
 import email.message
 import gzip
-import httplib
 import json
 from optparse import OptionParser
 import os.path
@@ -16,13 +14,30 @@ import random
 import re
 import socket
 import string
-import sys
 import time
 import traceback
-import urllib2
-import urlparse
+
+_ver = sys.version_info
+is_py2 = (_ver[0] == 2)
+is_py3 = (_ver[0] == 3)
+
+if is_py2:
+    from StringIO import StringIO
+    from cStringIO import StringIO as BytesIO
+    NativeStringIO = BytesIO
+    import BaseHTTPServer
+    import httplib
+    from urllib2 import urlopen
+    import urlparse
+elif is_py3:
+    from io import StringIO, BytesIO
+    import http.server as BaseHTTPServer
+    import http.client as httplib
+    from urllib.request import urlopen
+    import urllib.parse as urlparse
 
 
+DEFAULT_HOST = '0.0.0.0'
 DEFAULT_PORT = 13085
 
 class Request(object):
@@ -210,7 +225,7 @@ class Rule(object):
         HTTP status and headers are not copied from `url`.
         """
         if url not in Rule.url_cache:
-            Rule.url_cache[url] = urllib2.urlopen(url).read()
+            Rule.url_cache[url] = urlopen(url).read()
         return self.body(Rule.url_cache[url])
     
     @Cheat.entry('seconds')
@@ -532,14 +547,21 @@ class PathRule(Rule):
         return bool(self.regex.search(req.path))
 
 
-def parse_rules(code):
-    rules = []
-    def path(*args, **kwargs):
+class RuleParser:
+
+    def __init__(self):
+        self.rules = []
+
+    def path(self, *args, **kwargs):
         rule = PathRule(*args, **kwargs)
-        rules.append(rule)
+        self.rules.append(rule)
         return rule
-    exec code in {'path': path}
-    return rules
+
+
+def parse_rules(code):
+    o = RuleParser()
+    exec(code, {}, {'path': o.path})
+    return o.rules
 
 
 CONSOLE_TPL = string.Template('''
