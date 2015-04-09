@@ -1,6 +1,0 @@
-[run]
-source = turq
-
-[report]
-omit = 
-    tests*
