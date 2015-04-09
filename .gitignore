@@ -3,3 +3,6 @@ build
 dist
 docs/_build
 MANIFEST
+.tox
+.coverage*
+.idea/
