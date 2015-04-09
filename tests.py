@@ -6,6 +6,7 @@ import gzip
 from six.moves import http_client
 import socket
 import subprocess
+from signal import SIGINT
 import time
 import unittest
 from six.moves.urllib.parse import urlencode
@@ -20,12 +21,12 @@ class TurqTestCase(unittest.TestCase):
             # exec prevents the shell from spawning a subprocess
             # which then fails to terminate.
             # http://stackoverflow.com/questions/4789837/
-            'exec python turq.py --host 127.0.0.1', shell=True,
+            'exec coverage run turq.py --host 127.0.0.1', shell=True,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         time.sleep(0.5)
 
     def tearDown(self):
-        self.proc.kill()
+        self.proc.send_signal(SIGINT)
         self.proc.wait()
         time.sleep(0.2)
     
