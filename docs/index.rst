@@ -185,6 +185,39 @@ attaching it to the rule by using the rule as a decorator::
             r.json({'id': req.query['id']})
 
 
+Programmatic use
+~~~~~~~~~~~~~~~~
+Turq was intended for interactive use and does not currently have a real API.
+This will hopefully be fixed in the future.
+
+Consider using a more mature tool like HTTPretty_ for automated testing
+(but be aware of possible problems_ as well).
+
+.. _HTTPretty: https://github.com/gabrielfalcao/HTTPretty
+.. _problems: http://www.peterbe.com/plog/bye-bye-httpretty
+
+That said, Turq is a straightforward Python module
+and nothing can prevent you from using its internals,
+just don’t count on them working in future versions.
+Here is an example context manager that spawns Turq in a parallel process
+to handle *one* request with rules taken from `code`::
+
+    import contextlib, multiprocessing, time
+
+    @contextlib.contextmanager
+    def spawn_turq(host, port, code):
+        def serve(host, port, code):
+            import BaseHTTPServer, turq
+            turq.TurqHandler.rules = turq.parse_rules(code)
+            server = BaseHTTPServer.HTTPServer((host, port), turq.TurqHandler)
+            server.handle_request()
+        p = multiprocessing.Process(target=serve, args=(host, port, code))
+        p.start()
+        time.sleep(1)    # Give the process some time to start
+        yield
+        p.join()
+
+
 Limitations
 ~~~~~~~~~~~
 Turq does not provide full control over the HTTP exchange on the wire.
