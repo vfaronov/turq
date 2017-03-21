@@ -1,0 +1,31 @@
+[MASTER]
+
+# Do not remember and compare with previous results. That's just noise.
+persistent=no
+
+
+[REPORTS]
+
+reports=no
+
+
+[MESSAGES CONTROL]
+
+disable=
+    # - Don't tell me that I've locally disabled a check. That's the point!
+    locally-disabled,locally-enabled,
+    # - Missing docstrings are clearly visible, I will decide for myself.
+    missing-docstring,
+
+
+[BASIC]
+
+# What Pylint considers "constants" are sometimes valid global variables,
+# such as per-module `logger`.
+const-rgx=[A-Za-z_][A-Za-z0-9_]*
+
+
+[EXCEPTIONS]
+
+# Catching `Exception` is a perfectly good idea in many cases.
+overgeneral-exceptions=
