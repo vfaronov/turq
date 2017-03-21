@@ -35,3 +35,8 @@ const-rgx=[A-Za-z_][A-Za-z0-9_]*
 
 # Catching `Exception` is a perfectly good idea in many cases.
 overgeneral-exceptions=
+
+
+[TYPECHECK]
+
+generated-members=h11\.[A-Z]+

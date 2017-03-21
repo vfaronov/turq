@@ -21,6 +21,10 @@ setup(
     license='ISC',
     packages=['turq'],
     entry_points={'console_scripts': ['turq=turq.main:main']},
+    install_requires=[
+        'h11 >= 0.7.0',
+        'Werkzeug >= 0.12.1',
+    ],
     classifiers=[
         'Intended Audience :: Developers',
         'License :: OSI Approved :: ISC License (ISCL)',
