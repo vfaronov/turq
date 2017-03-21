@@ -14,11 +14,17 @@ reports=no
 disable=
     # - Don't tell me that I've locally disabled a check. That's the point!
     locally-disabled,locally-enabled,
+    # - No factoring checks.
+    R,
     # - Missing docstrings are clearly visible, I will decide for myself.
     missing-docstring,
 
 
 [BASIC]
+
+# Single-letter variable names are fine in many cases.
+variable-rgx=[a-z_][a-z0-9_]*
+argument-rgx=[a-z_][a-z0-9_]*
 
 # What Pylint considers "constants" are sometimes valid global variables,
 # such as per-module `logger`.
