@@ -26,9 +26,7 @@ class RulesContext:
         assert isinstance(event, h11.Request)
         self.request = Request(
             self, event.method.decode(), event.target.decode(),
-            event.http_version.decode(),
-            headers=[(name.decode(), value.decode('iso-8859-1'))
-                     for (name, value) in event.headers]
+            event.http_version.decode(), _decode_headers(event.headers),
         )
         self._response = Response()
         self._scope = self._build_scope()
@@ -53,6 +51,8 @@ class RulesContext:
                 chunks.append(event.data)
             elif isinstance(event, h11.EndOfMessage):
                 self.request._body = b''.join(chunks)
+                # Add any trailer part to the main headers list
+                self.request.raw_headers += _decode_headers(event.headers)
                 break
 
     def _send_response(self, interim=False):
@@ -61,14 +61,15 @@ class RulesContext:
         self._handler.send_event(cls(
             status_code=self._response.status_code,
             reason=force_bytes(self._response.reason),
-            headers=[(force_bytes(name), force_bytes(value))
-                     for (name, value) in self._response.raw_headers]
+            headers=_encode_headers(self._response.raw_headers),
         ))
 
     def _send_body(self):
         if self._response.body:
             self.chunk(self._response.body)
-        self._handler.send_event(h11.EndOfMessage())
+        self._handler.send_event(h11.EndOfMessage(
+            headers=_encode_headers(self._response.raw_headers),
+        ))
 
     method = property(lambda self: self.request.method)
     path = property(lambda self: self.request.path)
@@ -110,6 +111,9 @@ class RulesContext:
     def flush(self, body=True):
         if self._handler.our_state is h11.SEND_RESPONSE:
             self._send_response()
+            # Clear the list of response headers: from this point on,
+            # any headers added will be sent in the trailer part.
+            self._response.raw_headers[:] = []
         if body and self._handler.our_state is h11.SEND_BODY:
             self._send_body()
 
@@ -121,7 +125,8 @@ class Request:
         self.method = method
         self.path = self.target = target
         self.version = self.http_version = http_version
-        self.headers = wsgiref.headers.Headers(headers)
+        self.raw_headers = headers
+        self.headers = wsgiref.headers.Headers(self.raw_headers)
         self._body = None
 
     @property
@@ -151,3 +156,12 @@ class Response:
             self.headers['Content-Length'] = str(len(self.body))
         if not self.keep_alive:
             self.headers.add_header('Connection', 'close')
+
+
+def _decode_headers(headers):
+    return [(name.decode(), value.decode('iso-8859-1'))
+            for (name, value) in headers]
+
+def _encode_headers(headers):
+    return [(force_bytes(name), force_bytes(value))
+            for (name, value) in headers]
