@@ -38,8 +38,12 @@ class RulesContext:
         self.flush()
 
     def _build_scope(self):
-        return {name: getattr(self, name)
-                for name in dir(self) if not name.startswith('_')}
+        scope = {name: getattr(self, name)
+                 for name in dir(self) if not name.startswith('_')}
+        # Shortcuts for common request methods
+        for method in turq.util.http.KNOWN_METHODS:
+            scope[method.replace('-', '_')] = (self.method == method)
+        return scope
 
     def _receive_body(self):
         chunks = []
@@ -69,15 +73,6 @@ class RulesContext:
     method = property(lambda self: self.request.method)
     path = property(lambda self: self.request.path)
 
-    GET = property(lambda self: self.method == 'GET')
-    HEAD = property(lambda self: self.method == 'HEAD')
-    POST = property(lambda self: self.method == 'POST')
-    PUT = property(lambda self: self.method == 'PUT')
-    DELETE = property(lambda self: self.method == 'DELETE')
-    OPTIONS = property(lambda self: self.method == 'OPTIONS')
-    TRACE = property(lambda self: self.method == 'TRACE')
-    CONNECT = property(lambda self: self.method == 'CONNECT')
-
     def status(self, code, reason=None):
         self._response.status_code = code
         self._response.reason = reason
@@ -94,7 +89,7 @@ class RulesContext:
     def chunk(self, data):
         self.flush(body=False)
         self._response.body = None
-        if not self.HEAD:
+        if self.method != 'HEAD':
             self._handler.send_event(h11.Data(data=force_bytes(data)))
 
     def framing(self, content_length=None, keep_alive=None):
