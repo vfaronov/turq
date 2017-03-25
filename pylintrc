@@ -39,4 +39,5 @@ overgeneral-exceptions=
 
 [TYPECHECK]
 
-generated-members=h11\.[A-Z]+
+# ``h11.NEED_DATA``, etc.
+generated-members=h11\.[A-Z][A-Z_]+
