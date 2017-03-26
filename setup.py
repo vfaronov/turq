@@ -20,10 +20,12 @@ setup(
     author_email='vfaronov@gmail.com',
     license='ISC',
     packages=['turq'],
+    package_data={'turq': ['examples.rst']},
     entry_points={'console_scripts': ['turq=turq.main:main']},
     install_requires=[
         'h11 >= 0.7.0',
         'Werkzeug >= 0.12.1',
+        'docutils >= 0.13.1',
     ],
     classifiers=[
         'Intended Audience :: Developers',

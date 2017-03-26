@@ -4,13 +4,21 @@
 #
 #    pip-compile --output-file tools/requirements.txt tools/requirements.in
 #
+appdirs==1.4.3            # via setuptools
 astroid==1.4.9            # via pylint
 click==6.7                # via pip-tools
 first==2.0.1              # via pip-tools
 isort==4.2.5              # via pylint
 lazy-object-proxy==1.2.2  # via astroid
 mccabe==0.6.1             # via pylint
+packaging==16.8           # via setuptools
 pip-tools==1.8.0
+py==1.4.33                # via pytest
 pylint==1.6.5
-six==1.10.0               # via astroid, pip-tools, pylint
+pyparsing==2.2.0          # via packaging
+pytest==3.0.7
+six==1.10.0               # via astroid, packaging, pip-tools, pylint, setuptools
 wrapt==1.10.10            # via astroid
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools                # via pytest
