@@ -103,11 +103,9 @@ class RulesContext:
         if self.method != 'HEAD':
             self._handler.send_event(h11.Data(data=force_bytes(data)))
 
-    def framing(self, content_length=None, keep_alive=None):
-        if content_length is not None:
-            self._response.use_content_length = content_length
-        if keep_alive is not None:
-            self._response.keep_alive = keep_alive
+    def content_length(self):
+        self._response.headers['Content-Length'] = \
+            str(len(self._response.body))
 
     @contextlib.contextmanager
     def interim(self):
@@ -158,18 +156,12 @@ class Response:
         self.raw_headers = []
         self.headers = wsgiref.headers.Headers(self.raw_headers)
         self.body = b''
-        self.use_content_length = False
-        self.keep_alive = True
 
     def finalize(self):
         if self.reason is None:
             self.reason = turq.util.http.default_reason(self.status_code)
         if 200 <= self.status_code <= 499 and 'Date' not in self.headers:
             self.headers['Date'] = turq.util.http.date()
-        if self.use_content_length:
-            self.headers['Content-Length'] = str(len(self.body))
-        if not self.keep_alive:
-            self.headers.add_header('Connection', 'close')
 
 
 def _decode_headers(headers):
