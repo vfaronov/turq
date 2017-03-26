@@ -129,6 +129,14 @@ class RulesContext:
         self._ensure_request_received()     # Get the trailer part, if any
         self._response = forward(self.request, hostname, port, target, tls)
 
+    def text(self, content):
+        self.header('Content-Type', 'text/plain')
+        self.body(content)
+
+    def error(self, code):
+        self.status(code)
+        self.text('Error! %s\r\n' % turq.util.http.error_explanation(code))
+
 
 class Request:
 
