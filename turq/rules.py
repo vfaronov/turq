@@ -3,13 +3,14 @@
 import contextlib
 import socket
 import ssl
+import time
 import wsgiref.headers
 
 import h11
 
 import turq.util.http
 import turq.util.logging
-from turq.util.text import force_bytes
+from turq.util.text import force_bytes, lorem_ipsum
 
 
 class RulesContext:
@@ -42,6 +43,9 @@ class RulesContext:
         # Shortcuts for common request methods
         for method in turq.util.http.KNOWN_METHODS:
             scope[method.replace('-', '_')] = (self.method == method)
+        # Utility functions
+        for func in [lorem_ipsum, time.sleep]:
+            scope[func.__name__] = func
         return scope
 
     def _ensure_request_received(self):
