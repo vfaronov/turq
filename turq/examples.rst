@@ -53,11 +53,11 @@ Streaming responses
 
     header('Content-Type', 'text/event-stream')
     sleep(1)        # 1 second delay
-    chunk('- data: my event 1\r\n\r\n')
+    chunk('data: my event 1\r\n\r\n')
     sleep(1)
-    chunk('- data: my event 2\r\n\r\n')
+    chunk('data: my event 2\r\n\r\n')
     sleep(1)
-    chunk('- data: my event 3\r\n\r\n')
+    chunk('data: my event 3\r\n\r\n')
 
 Once you call ``chunk()``, the response begins streaming.
 Any headers you set after that will be sent in the `trailer part`_::

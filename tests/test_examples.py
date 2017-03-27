@@ -145,9 +145,9 @@ def test_streaming_responses_1(example):
     t1 = time.monotonic()
     assert t1 - t0 >= 3     # At least 3 seconds elapsed, due to ``sleep()``
     assert (b'content-type', b'text/event-stream') in resp.headers
-    assert data1.data == b'- data: my event 1\r\n\r\n'
-    assert data2.data == b'- data: my event 2\r\n\r\n'
-    assert data3.data == b'- data: my event 3\r\n\r\n'
+    assert data1.data == b'data: my event 1\r\n\r\n'
+    assert data2.data == b'data: my event 2\r\n\r\n'
+    assert data3.data == b'data: my event 3\r\n\r\n'
 
 
 def test_streaming_responses_2(example):
