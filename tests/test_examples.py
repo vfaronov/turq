@@ -91,7 +91,7 @@ def test_response_headers_2(example):
     assert (b'set-cookie', b'__adtrack=abcdef') in resp.headers
 
 
-def test_custom_status_code_1(example):
+def test_custom_status_code_and_reason_1(example):
     resp, _, _ = example.send(h11.Request(method='GET', target='/',
                                           headers=[('Host', 'example')]),
                               h11.EndOfMessage())
