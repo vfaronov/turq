@@ -49,7 +49,6 @@ class MockHandler(socketserver.StreamRequestHandler):
             self._logger.error('error in request cycle: %s', e)
             if self._hconn.our_state in [h11.SEND_RESPONSE, h11.IDLE]:
                 self._send_fatal_error(e)
-                self._shutdown_and_discard()
 
     @property
     def our_state(self):
@@ -93,8 +92,10 @@ class MockHandler(socketserver.StreamRequestHandler):
         except Exception as e:
             self._logger.error('cannot send error response: %s', e)
 
-    def _shutdown_and_discard(self):
         # A crude way to avoid the TCP reset problem (RFC 7230 Section 6.6).
-        self._socket.shutdown(socket.SHUT_WR)
-        while self._socket.recv(1024):
+        try:
+            self._socket.shutdown(socket.SHUT_WR)
+            while self._socket.recv(1024):
+                pass
+        except OSError:     # The client may have already closed the connection
             pass
