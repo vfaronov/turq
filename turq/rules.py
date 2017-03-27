@@ -15,6 +15,14 @@ from turq.util.text import force_bytes, lorem_ipsum
 
 class RulesContext:
 
+    # An instance of `RulesContext` is responsible for handling
+    # one request according to the rules provided by the user.
+    # It receives `h11` events from its `MockHandler`,
+    # converts them into a convenient `Request` representation,
+    # executes the rules code to fill out the `Response`,
+    # converts the `Response` into `h11` events
+    # and sends them back to the `MockHandler`.
+
     # pylint: disable=attribute-defined-outside-init
 
     def __init__(self, code, handler):
@@ -34,16 +42,22 @@ class RulesContext:
         self._response = Response()
         self._scope = self._build_scope()
         exec(self._code, self._scope)        # pylint: disable=exec-used
+
+        # Depending on the rules, at this point the request body may or may not
+        # have been received, and the response may or may not have been sent.
+        # We need to make sure everything is flushed.
         self._ensure_request_received()
         self.flush()
 
     def _build_scope(self):
+        # Assemble the global scope in which the rules will be executed.
+        # This includes all "public" attributes of `RulesContext`...
         scope = {name: getattr(self, name)
                  for name in dir(self) if not name.startswith('_')}
-        # Shortcuts for common request methods
+        # ...shortcuts for common request methods
         for method in turq.util.http.KNOWN_METHODS:
             scope[method.replace('-', '_')] = (self.method == method)
-        # Utility functions
+        # ...utility functions
         for func in [lorem_ipsum, time.sleep]:
             scope[func.__name__] = func
         return scope
@@ -51,6 +65,15 @@ class RulesContext:
     def _ensure_request_received(self):
         if self._handler.their_state is h11.SEND_BODY:
             self._receive_body()
+
+    def flush(self, body_too=True):
+        if self._handler.our_state is h11.SEND_RESPONSE:
+            self._send_response()
+            # Clear the list of response headers: from this point on,
+            # any headers added will be sent in the trailer part.
+            self._response.raw_headers[:] = []
+        if body_too and self._handler.our_state is h11.SEND_BODY:
+            self._send_body()
 
     def _receive_body(self):
         chunks = []
@@ -98,8 +121,12 @@ class RulesContext:
         self._response.body = force_bytes(data, 'utf-8')
 
     def chunk(self, data):
-        self.flush(body=False)
-        self._response.body = None
+        self.flush(body_too=False)
+        self._response.body = None          # So that `_send_body` skips it
+        # Responses to HEAD can't have a message body. We magically skip
+        # sending data in that case, so the user doesn't have to remember.
+        # (204 and 304 responses also can't have a body, but those have to be
+        # explicitly selected by the user, so it's their problem.)
         if self.method != 'HEAD':
             self._handler.send_event(h11.Data(data=force_bytes(data)))
 
@@ -115,15 +142,6 @@ class RulesContext:
         yield
         self._send_response(interim=True)
         self._response = main_response
-
-    def flush(self, body=True):
-        if self._handler.our_state is h11.SEND_RESPONSE:
-            self._send_response()
-            # Clear the list of response headers: from this point on,
-            # any headers added will be sent in the trailer part.
-            self._response.raw_headers[:] = []
-        if body and self._handler.our_state is h11.SEND_BODY:
-            self._send_body()
 
     def forward(self, hostname, port, target, tls=None):
         self._ensure_request_received()     # Get the trailer part, if any
@@ -151,6 +169,8 @@ class Request:
 
     @property
     def body(self):
+        # Request body is received lazily. This allows handling
+        # finer aspects of the protocol, such as ``Expect: 100-continue``.
         if self._body is None:
             self._context._receive_body()
         return self._body
@@ -166,13 +186,22 @@ class Response:
         self.body = b''
 
     def finalize(self):
+        # h11 sends an empty reason phrase by default. While this is
+        # correct with regard to the protocol, I think it will be
+        # more convenient and less surprising to the user if we fill it.
         if self.reason is None:
             self.reason = turq.util.http.default_reason(self.status_code)
+
+        # RFC 7231 Section 7.1.1.2 requires a ``Date`` header
+        # on all 2xx, 3xx, and 4xx responses.
         if 200 <= self.status_code <= 499 and 'Date' not in self.headers:
             self.headers['Date'] = turq.util.http.date()
 
 
 def _decode_headers(headers):
+    # Header values can contain arbitrary bytes. Decode them from ISO-8859-1,
+    # which is the historical encoding of HTTP. Decoding bytes from ISO-8859-1
+    # is a lossless operation, it cannot fail.
     return [(name.decode(), value.decode('iso-8859-1'))
             for (name, value) in headers]
 
@@ -187,6 +216,7 @@ def forward(request, hostname, port, target, tls=None):
         tls = (port == 443)
     headers = _forward_headers(request.raw_headers, request.http_version,
                                also_exclude=['Host'])
+    # RFC 7230 recommends that ``Host`` be the first header.
     headers.insert(0, ('Host', _generate_host_header(hostname, port, tls)))
     headers.append(('Connection', 'close'))
 
@@ -194,6 +224,8 @@ def forward(request, hostname, port, target, tls=None):
 
     try:
         if tls:
+            # We intentionally ignore server certificates. In this context,
+            # they are more likely to be a nuisance than a boon.
             ssl_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
             sock = ssl_context.wrap_socket(sock, server_hostname=hostname)
         sock.sendall(hconn.send(h11.Request(method=request.method,
@@ -210,6 +242,8 @@ def forward(request, hostname, port, target, tls=None):
                 hconn.receive_data(sock.recv(4096))
             elif isinstance(event, h11.Response):
                 response.status_code = event.status_code
+                # Reason phrases can contain arbitrary bytes.
+                # See above regarding ISO-8859-1.
                 response.reason = event.reason.decode('iso-8859-1')
                 response.raw_headers[:] = _forward_headers(
                     _decode_headers(event.headers),

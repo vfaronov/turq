@@ -24,13 +24,6 @@ LOREM_IPSUM_WORDS = ['a', 'ac', 'accumsan', 'adipiscing', 'aenean', 'aliquam',
                      'vitae', 'vivamus', 'viverra', 'vulputate']
 
 
-def force_str(x, encoding='iso-8859-1'):
-    if isinstance(x, bytes):
-        return x.decode(encoding)
-    else:
-        return str(x)
-
-
 def force_bytes(x, encoding='iso-8859-1'):
     if isinstance(x, bytes):
         return x

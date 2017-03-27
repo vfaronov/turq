@@ -1,3 +1,7 @@
+# This module, together with `turq.rules`, constitutes the Turq mock server.
+# It tries to be mostly HTTP-compliant by default, but it doesn't care at all
+# about performance. In particular, there are no explicit timeouts.
+
 import socket
 import socketserver
 
@@ -10,7 +14,7 @@ import turq.util.logging
 
 class MockServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
-    allow_reuse_address = True
+    allow_reuse_address = True    # Prevent "Address already in use" on restart
     daemon_threads = True
 
     def __init__(self, hostname, port, ipv6, initial_rules,
@@ -27,7 +31,6 @@ class MockServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
 class MockHandler(socketserver.StreamRequestHandler):
 
-
     def setup(self):
         super().setup()
         self._logger = turq.util.logging.instanceLogger(self)
@@ -38,12 +41,16 @@ class MockHandler(socketserver.StreamRequestHandler):
         try:
             while True:
                 # pylint: disable=protected-access
+                # `RulesContext` takes care of handling one complete
+                # request/response cycle, including reading the request.
                 RulesContext(self.server.rules, self)._run()
                 if self._hconn.states == {h11.CLIENT: h11.DONE,
                                           h11.SERVER: h11.DONE}:
-                    # Persistent connection, proceed to next request.
+                    # Connection persists, proceed to the next cycle.
                     self._hconn.start_next_cycle()
                 else:
+                    # Connection has to be closed (e.g. because HTTP/1.0
+                    # or because somebody sent "Connection: close").
                     break
         except Exception as e:
             self._logger.error('error in request cycle: %s', e)
@@ -73,10 +80,7 @@ class MockHandler(socketserver.StreamRequestHandler):
         self._socket.sendall(data)
 
     def _send_fatal_error(self, exc):
-        if isinstance(exc, h11.RemoteProtocolError):
-            status_code = exc.error_status_hint
-        else:
-            status_code = 500
+        status_code = getattr(exc, 'error_status_hint', 500)
         try:
             self.send_event(h11.Response(
                 status_code=status_code,
