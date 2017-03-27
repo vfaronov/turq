@@ -29,6 +29,9 @@ def parse_args(argv):
     parser.add_argument('-p', '--mock-port', metavar='PORT', type=int,
                         default=DEFAULT_MOCK_PORT,
                         help='port for the mock server to listen on')
+    parser.add_argument('-6', '--mock-ipv6', action='store_true',
+                        default=False,
+                        help='mock server listens on IPv6 instead of IPv4')
     parser.add_argument('-r', '--rules', metavar='PATH',
                         type=argparse.FileType('r'),
                         help='file with initial rules code')
@@ -41,7 +44,8 @@ def excepthook(_type, exc, _traceback):
 
 def run(args):
     rules = args.rules.read() if args.rules else DEFAULT_RULES
-    mock_server = turq.mock.MockServer((args.mock_bind, args.mock_port), rules)
+    mock_server = turq.mock.MockServer(args.mock_bind, args.mock_port,
+                                       args.mock_ipv6, rules)
     try:
         mock_server.serve_forever()
     except KeyboardInterrupt:

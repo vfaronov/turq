@@ -13,8 +13,10 @@ class MockServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     allow_reuse_address = True
     daemon_threads = True
 
-    def __init__(self, server_address, initial_rules, bind_and_activate=True):
-        super().__init__(server_address, MockHandler, bind_and_activate)
+    def __init__(self, hostname, port, ipv6, initial_rules,
+                 bind_and_activate=True):
+        self.address_family = socket.AF_INET6 if ipv6 else socket.AF_INET
+        super().__init__((hostname, port), MockHandler, bind_and_activate)
         self._logger = turq.util.logging.instanceLogger(self)
         self.set_rules(initial_rules)
 
