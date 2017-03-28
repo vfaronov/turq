@@ -6,6 +6,7 @@ Basics
 
 ::
 
+    # This is a comment. Normal Python syntax.
     if path == '/hello':
         header('Content-Type', 'text/plain')
         body('Hello world!\r\n')
@@ -26,6 +27,33 @@ To *add* a header instead::
 
     add_header('Set-Cookie', 'sessionid=123456')
     add_header('Set-Cookie', '__adtrack=abcdef')
+
+
+Custom status code and reason
+-----------------------------
+
+::
+
+    status(567, 'Server Fell Over')
+    text('Server crashed, sorry!\r\n')
+
+
+Forwarding requests
+-------------------
+
+Turq can act as a gateway or “reverse proxy”::
+
+    forward('httpbin.org', 80,  # host, port
+            target)             # path + query string
+    # At this point, response from httpbin.org:80
+    # has been copied to Turq, and can be tweaked:
+    add_header('Cache-Control', 'max-age=86400')
+
+Turq uses TLS when connecting to port 443, but **ignores certificates**.
+You can override TLS like this::
+
+    forward('develop1.example', 8765,
+            '/v1/articles', tls=True)
 
 
 Response framing
@@ -70,10 +98,23 @@ Any headers you set after that will be sent in the `trailer part`_::
 .. _trailer part: https://tools.ietf.org/html/rfc7230#section-4.1.2
 
 
-Custom status code and reason
------------------------------
+Handling ``Expect: 100-continue``
+---------------------------------
 
 ::
 
-    status(567, 'Server Fell Over')
-    text('Server crashed, sorry!\r\n')
+    with interim():
+        status(100)
+
+    text('Resource updated OK')
+
+In the above example, `100 (Continue)`_ is sent immediately after the
+``interim()`` block, but the final 200 (OK) response is sent only after
+reading the full request body.
+
+If instead you want to send a response *before* reading the request body::
+
+    error(403)      # Forbidden
+    flush()
+
+.. _100 (Continue): https://tools.ietf.org/html/rfc7231#section-6.2.1

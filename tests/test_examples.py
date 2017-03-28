@@ -4,6 +4,7 @@
 
 # pylint: disable=redefined-outer-name,invalid-name
 
+import json
 import time
 
 import h11
@@ -159,3 +160,48 @@ def test_streaming_responses_2(example):
     assert data1.data == b'Hello, '
     assert data2.data == b'world!\n'
     assert b'content-md5' in dict(end.headers)      # In the trailer part
+
+
+def test_handling_expect_100_continue_1(example):
+    with example.connect() as sock:
+        sock.sendall(b'POST / HTTP/1.1\r\n'
+                     b'Host: example\r\n'
+                     b'Content-Length: 14\r\n'
+                     b'\r\n')
+        assert b'HTTP/1.1 100 Continue\r\n' in sock.recv(4096)
+        sock.sendall(b'Hello world!\r\n')
+        assert b'HTTP/1.1 200 OK\r\n' in sock.recv(4096)
+
+
+def test_handling_expect_100_continue_2(example):
+    with example.connect() as sock:
+        sock.sendall(b'POST / HTTP/1.1\r\n'
+                     b'Host: example\r\n'
+                     b'Content-Length: 14\r\n'
+                     b'\r\n')
+        assert b'HTTP/1.1 403 Forbidden\r\n' in sock.recv(4096)
+
+
+def test_forwarding_requests_1(example):
+    resp, data, _ = example.send(
+        h11.Request(method='GET', target='/get',
+                    headers=[('Host', 'example'),
+                             ('User-Agent', 'test'),
+                             ('Upgrade', 'my-protocol'),
+                             ('Connection', 'upgrade')]),
+        h11.EndOfMessage())
+    assert (b'content-type', b'application/json') in resp.headers
+    assert (b'cache-control', b'max-age=86400') in resp.headers
+    # Headers were correctly forwarded by Turq.
+    what_upstream_saw = json.loads(data.data.decode('utf-8'))
+    assert 'Upgrade' not in what_upstream_saw['headers']
+    assert what_upstream_saw['headers']['User-Agent'] == 'test'
+    # Unfortunately httpbin does not reflect ``Via`` in ``headers``.
+
+
+def test_forwarding_requests_2(example):
+    resp, _, _ = example.send(h11.Request(method='GET', target='/',
+                                          headers=[('Host', 'example')]),
+                              h11.EndOfMessage())
+    # ``develop1.example`` is unreachable
+    assert 500 <= resp.status_code <= 599
