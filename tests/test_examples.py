@@ -275,3 +275,8 @@ def test_html_pages_2(example):
 def test_html_pages_3(example):
     resp = example.request('GET', '/')
     assert '<style>h1 {color: red}</style>' in resp.text
+
+
+def test_anything_else_1(example):
+    resp = example.request('GET', '/')
+    assert 'March 2017' in resp.text

@@ -182,3 +182,15 @@ If instead you want to send a response *before* reading the request body::
     flush()
 
 .. _100 (Continue): https://tools.ietf.org/html/rfc7231#section-6.2.1
+
+
+Anything else
+-------------
+
+In the end, Turq rules are just Python code that is not sandboxed.
+You can import and use anything you like::
+
+    import calendar
+    cal = calendar.HTMLCalendar()
+    header('Content-Type', 'text/html')
+    body(cal.formatmonth(2017, 3))
