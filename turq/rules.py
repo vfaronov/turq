@@ -4,6 +4,7 @@ import cgi
 import contextlib
 import json
 import io
+import random
 import re
 import socket
 import ssl
@@ -206,6 +207,10 @@ class RulesContext:
             yield document
         self.header('Content-Type', 'text/html; charset=utf-8')
         self.body(document.render())
+
+    @staticmethod
+    def maybe(p):
+        return random.random() < p
 
 
 class Request:

@@ -280,3 +280,9 @@ def test_html_pages_3(example):
 def test_anything_else_1(example):
     resp = example.request('GET', '/')
     assert 'March 2017' in resp.text
+
+
+def test_random_responses_1(example):
+    # Yeah, this doesn't actually test the probability
+    resp = example.request('GET', '/')
+    assert resp.status_code == 503 or 'Hello world!' in resp.text

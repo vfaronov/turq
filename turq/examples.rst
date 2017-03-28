@@ -120,6 +120,17 @@ You can override TLS like this::
             '/v1/articles', tls=True)
 
 
+Random responses
+----------------
+
+::
+
+    if maybe(0.1):    # 10% probability
+        error(503)
+    else:
+        html()
+
+
 Response framing
 ----------------
 
