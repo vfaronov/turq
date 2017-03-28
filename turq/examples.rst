@@ -195,6 +195,20 @@ If instead you want to send a response *before* reading the request body::
 .. _100 (Continue): https://tools.ietf.org/html/rfc7231#section-6.2.1
 
 
+Switching protocols
+-------------------
+
+::
+
+    if request.headers['Upgrade'] == 'QXTP':
+        with interim():
+            status(101)   # Switching Protocols
+            header('Upgrade', 'QXTP')
+            header('Connection', 'upgrade')
+        send_raw('This is no longer HTTP!\r\n')
+        send_raw('This is QXTP now!\r\n')
+
+
 Anything else
 -------------
 

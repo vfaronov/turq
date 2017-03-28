@@ -79,6 +79,9 @@ class MockHandler(socketserver.StreamRequestHandler):
         data = self._hconn.send(event)
         self._socket.sendall(data)
 
+    def send_raw(self, data):
+        self._socket.sendall(data)
+
     def _send_fatal_error(self, exc):
         status_code = getattr(exc, 'error_status_hint', 500)
         try:

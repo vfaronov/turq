@@ -286,3 +286,27 @@ def test_random_responses_1(example):
     # Yeah, this doesn't actually test the probability
     resp = example.request('GET', '/')
     assert resp.status_code == 503 or 'Hello world!' in resp.text
+
+
+def test_switching_protocols_1_upgrade(example):
+    with example.connect() as sock:
+        sock.sendall(b'GET / HTTP/1.1\r\n'
+                     b'Host: example\r\n'
+                     b'Upgrade: QXTP\r\n'
+                     b'Connection: Upgrade\r\n'
+                     b'\r\n')
+        resp = []
+        while not resp or resp[-1]:         # Read everything
+            resp.append(sock.recv(4096))
+        assert b'HTTP/1.1 101 Switching Protocols\r\n' in b''.join(resp)
+        assert b'This is QXTP now!\r\n' in b''.join(resp)
+
+
+def test_switching_protocols_1_no_upgrade(example):
+    with example.connect() as sock:
+        sock.sendall(b'GET / HTTP/1.1\r\n'
+                     b'Host: example\r\n'
+                     b'Upgrade: WZTP\r\n'
+                     b'Connection: Upgrade\r\n'
+                     b'\r\n')
+        assert b'HTTP/1.1 200 OK\r\n' in sock.recv(4096)

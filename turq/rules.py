@@ -212,6 +212,9 @@ class RulesContext:
     def maybe(p):
         return random.random() < p
 
+    def send_raw(self, data):
+        self._handler.send_raw(force_bytes(data, 'utf-8'))
+
 
 class Request:
 
