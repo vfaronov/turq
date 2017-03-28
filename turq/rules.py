@@ -117,6 +117,9 @@ class RulesContext:
     def add_header(self, name, value):
         self._response.headers.add_header(name, value)
 
+    def delete_header(self, name):
+        del self._response.headers[name]
+
     def body(self, data):
         self._response.body = force_bytes(data, 'utf-8')
 

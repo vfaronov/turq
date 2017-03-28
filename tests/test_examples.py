@@ -192,6 +192,7 @@ def test_forwarding_requests_1(example):
         h11.EndOfMessage())
     assert (b'content-type', b'application/json') in resp.headers
     assert (b'cache-control', b'max-age=86400') in resp.headers
+    assert b'server' not in dict(resp.headers)
     # Headers were correctly forwarded by Turq.
     what_upstream_saw = json.loads(data.data.decode('utf-8'))
     assert 'Upgrade' not in what_upstream_saw['headers']

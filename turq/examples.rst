@@ -47,6 +47,7 @@ Turq can act as a gateway or “reverse proxy”::
             target)             # path + query string
     # At this point, response from httpbin.org:80
     # has been copied to Turq, and can be tweaked:
+    delete_header('Server')
     add_header('Cache-Control', 'max-age=86400')
 
 Turq uses TLS when connecting to port 443, but **ignores certificates**.
