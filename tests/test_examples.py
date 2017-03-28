@@ -258,3 +258,20 @@ def test_restful_routing_1_miss(example):
     assert resp.text == ''
     resp = example.request('GET', '/v1/products/12345/details')
     assert resp.text == ''
+
+
+def test_html_pages_1(example):
+    resp = example.request('GET', '/')
+    assert resp.headers['Content-Type'].startswith('text/html')
+    assert '<h1>Hello world!</h1>' in resp.text
+
+
+def test_html_pages_2(example):
+    resp = example.request('GET', '/')
+    assert '<h1>Welcome to our site</h1>' in resp.text
+    assert 'href="/products"' in resp.text
+
+
+def test_html_pages_3(example):
+    resp = example.request('GET', '/')
+    assert '<style>h1 {color: red}</style>' in resp.text

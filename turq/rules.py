@@ -11,6 +11,8 @@ import time
 from urllib.parse import parse_qs, urlparse
 import wsgiref.headers
 
+import dominate
+import dominate.tags as H
 import h11
 
 import turq.util.http
@@ -62,6 +64,8 @@ class RulesContext:
         # ...shortcuts for common request methods
         for method in turq.util.http.KNOWN_METHODS:
             scope[method.replace('-', '_')] = (self.method == method)
+        # ...Dominate's HTML tags library
+        scope['H'] = H
         # ...utility functions
         for func in [lorem_ipsum, time.sleep]:
             scope[func.__name__] = func
@@ -183,6 +187,25 @@ class RulesContext:
             return True
         else:
             return False
+
+    def html(self):
+        # If the user just calls ``html()``, we fill out a basic page.
+        with self._edit_html():
+            H.h1('Hello world!')
+            H.p(lorem_ipsum())
+            H.p(lorem_ipsum())
+        # But then we also return the context manager that can be used
+        # to rebuild the page as the user wishes. It does nothing unless
+        # it is entered (``with``).
+        return self._edit_html()
+
+    @contextlib.contextmanager
+    def _edit_html(self):
+        document = dominate.document()
+        with document:
+            yield document
+        self.header('Content-Type', 'text/html; charset=utf-8')
+        self.body(document.render())
 
 
 class Request:

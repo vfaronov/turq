@@ -30,6 +30,31 @@ Basics
             status(204)   # No Content
 
 
+HTML pages
+----------
+
+To get a simple page::
+
+    html()
+
+If you want to change the contents of the page, the full `Dominate`_ library
+is at your service (``dominate.tags`` imported as ``H``)::
+
+    with html():
+        H.h1('Welcome to our site')
+        H.p('Have a look at our ',
+            H.a('products', href='/products'))
+
+To change the ``<head>``::
+
+    with html() as document:
+        with document.head:
+            H.style('h1 {color: red}')
+        H.h1('Welcome to our site')
+
+.. _Dominate: https://github.com/Knio/dominate
+
+
 Request details
 ---------------
 

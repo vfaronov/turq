@@ -24,6 +24,7 @@ setup(
     entry_points={'console_scripts': ['turq=turq.main:main']},
     install_requires=[
         'h11 >= 0.7.0',
+        'dominate >= 2.3.1',
         'Werkzeug >= 0.12.1',
         'docutils >= 0.13.1',
     ],
