@@ -14,6 +14,28 @@ Basics
         error(404)
 
 
+Request details
+---------------
+
+::
+
+    if request.json:     # parsed JSON body
+        name = request.json['name']
+    elif request.form:   # URL-encoded or multipart
+        name = request.form['name']
+    elif query:     # query string parameters
+        name = query['name']
+    else:
+        raw_name = request.body     # raw bytes
+        name = raw_name.decode('utf-8')
+
+    # Header names are case-insensitive
+    if 'json' in request.headers['Accept']:
+        json({'hello': name})
+    else:
+        text('Hello %s!\r\n' % name)
+
+
 Response headers
 ----------------
 

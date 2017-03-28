@@ -5,6 +5,7 @@
 # pylint: disable=redefined-outer-name,invalid-name
 
 import json
+import io
 import time
 
 import h11
@@ -42,7 +43,7 @@ def test_basics_1_not_found(example):
                                  h11.EndOfMessage())
     assert resp.status_code == 404
     assert resp.reason == b'Not Found'
-    assert (b'content-type', b'text/plain') in resp.headers
+    assert (b'content-type', b'text/plain; charset=utf-8') in resp.headers
     assert b'Error! ' in data.data
 
 
@@ -206,3 +207,33 @@ def test_forwarding_requests_2(example):
                               h11.EndOfMessage())
     # ``develop1.example`` is unreachable
     assert 500 <= resp.status_code <= 599
+
+
+def test_request_details_1_json(example):
+    resp = example.request('POST', '/',
+                           headers={'Accept': 'application/json'},
+                           json={'name': 'Ленин'})
+    assert resp.json() == {'hello': 'Ленин'}
+
+
+def test_request_details_1_url_encoded_form(example):
+    resp = example.request('POST', '/',
+                           data={'request_id': 'Adk347sQZ', 'name': 'Чубайс'})
+    assert resp.text == 'Hello Чубайс!\r\n'
+
+
+def test_request_details_1_multipart(example):
+    resp = example.request('POST', '/',
+                           data={'name': 'Atatürk'},
+                           files={'dummy': io.BytesIO(b'force multipart')})
+    assert resp.text == 'Hello Atatürk!\r\n'
+
+
+def test_request_details_1_query(example):
+    resp = example.request('GET', '/', params={'name': 'Святослав'})
+    assert resp.text == 'Hello Святослав!\r\n'
+
+
+def test_request_details_1_raw(example):
+    resp = example.request('POST', '/', data='Ramesses')
+    assert resp.text == 'Hello Ramesses!\r\n'

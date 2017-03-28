@@ -1,9 +1,13 @@
 # pylint: disable=protected-access
 
+import cgi
 import contextlib
+import json
+import io
 import socket
 import ssl
 import time
+from urllib.parse import parse_qs, urlparse
 import wsgiref.headers
 
 import h11
@@ -106,6 +110,7 @@ class RulesContext:
     method = property(lambda self: self.request.method)
     target = property(lambda self: self.request.target)
     path = property(lambda self: self.request.path)
+    query = property(lambda self: self.request.query)
 
     def status(self, code, reason=None):
         self._response.status_code = code
@@ -151,12 +156,16 @@ class RulesContext:
         self._response = forward(self.request, hostname, port, target, tls)
 
     def text(self, content):
-        self.header('Content-Type', 'text/plain')
+        self.header('Content-Type', 'text/plain; charset=utf-8')
         self.body(content)
 
     def error(self, code):
         self.status(code)
         self.text('Error! %s\r\n' % turq.util.http.error_explanation(code))
+
+    def json(self, obj):
+        self.header('Content-Type', 'application/json')
+        self.body(json.dumps(obj))
 
 
 class Request:
@@ -164,11 +173,16 @@ class Request:
     def __init__(self, context, method, target, http_version, headers):
         self._context = context
         self.method = method
-        self.path = self.target = target
+        self.target = target
+        parsed_url = urlparse(target)
+        self.path = parsed_url.path
+        self.query = _single_values(parse_qs(parsed_url.query))
         self.version = self.http_version = http_version
         self.raw_headers = headers
         self.headers = wsgiref.headers.Headers(self.raw_headers)
         self._body = None
+        self._json = None
+        self._form = None
 
     @property
     def body(self):
@@ -177,6 +191,33 @@ class Request:
         if self._body is None:
             self._context._receive_body()
         return self._body
+
+    # `json` and `form` are very heavy-handed with regard to encoding.
+    # We don't care about applications that send JSON in UTF-16 or
+    # Windows-1251 in URL encoding. Turq should be easy in the common case.
+
+    @property
+    def json(self):
+        if self._json is None:
+            try:
+                self._json = json.loads(self.body.decode('utf-8'))
+            except ValueError as exc:
+                self._context._logger.debug('cannot read JSON: %s', exc)
+        return self._json
+
+    @property
+    def form(self):
+        if self._form is None:
+            try:
+                content_type = self.headers.get('Content-Type', '')
+                type_, params = cgi.parse_header(content_type)
+                if type_.lower() == 'multipart/form-data':
+                    self._form = _parse_multipart(self.body, params)
+                else:       # Assume URL-encoded
+                    self._form = _single_values(parse_qs(self.body.decode()))
+            except ValueError as exc:
+                self._context._logger.debug('cannot read form: %s', exc)
+        return self._form
 
 
 class Response:
@@ -211,6 +252,19 @@ def _decode_headers(headers):
 def _encode_headers(headers):
     return [(force_bytes(name), force_bytes(value))
             for (name, value) in headers]
+
+
+def _parse_multipart(body, params):
+    # Some ritual dance is required to get the `cgi` module work in 2017.
+    body = io.BytesIO(body)
+    params = {name: force_bytes(value) for (name, value) in params.items()}
+    parsed = _single_values(cgi.parse_multipart(body, params))
+    return {name: value.decode('utf-8') for (name, value) in parsed.items()}
+
+
+def _single_values(parsed_dict):
+    # For ease of use, leave only the first value for each name.
+    return {name: value for name, (value, *_) in parsed_dict.items()}
 
 
 def forward(request, hostname, port, target, tls=None):

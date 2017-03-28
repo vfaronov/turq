@@ -5,6 +5,7 @@ import time
 
 import h11
 import pytest
+import requests
 
 
 @pytest.fixture
@@ -69,3 +70,7 @@ class TurqInstance:
                     hconn.receive_data(sock.recv(4096))
                 elif not isinstance(event, h11.ConnectionClosed):
                     yield event
+
+    def request(self, method, url, **kwargs):
+        full_url = 'http://%s:%d%s' % (self.mock_hostname, self.mock_port, url)
+        return requests.request(method, full_url, **kwargs)

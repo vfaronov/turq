@@ -17,6 +17,7 @@ py==1.4.33                # via pytest
 pylint==1.6.5
 pyparsing==2.2.0          # via packaging
 pytest==3.0.7
+requests==2.13.0
 six==1.10.0               # via astroid, packaging, pip-tools, pylint, setuptools
 wrapt==1.10.10            # via astroid
 
