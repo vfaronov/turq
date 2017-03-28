@@ -237,3 +237,24 @@ def test_request_details_1_query(example):
 def test_request_details_1_raw(example):
     resp = example.request('POST', '/', data='Ramesses')
     assert resp.text == 'Hello Ramesses!\r\n'
+
+
+def test_restful_routing_1_hit(example):
+    resp = example.request('GET', '/v1/products/12345')
+    assert resp.json() == {'id': 12345, 'inStock': True}
+    resp = example.request('HEAD', '/v1/products/12345')
+    assert resp.text == ''
+    resp = example.request('PUT', '/v1/products/12345',
+                           json={'id': 12345, 'name': 'Café arabica'})
+    assert resp.json() == {'id': 12345, 'name': 'Café arabica'}
+    resp = example.request('DELETE', '/v1/products/12345')
+    assert resp.status_code == 204
+
+
+def test_restful_routing_1_miss(example):
+    resp = example.request('GET', '/')
+    assert resp.text == ''
+    resp = example.request('GET', '/v1/products/')
+    assert resp.text == ''
+    resp = example.request('GET', '/v1/products/12345/details')
+    assert resp.text == ''

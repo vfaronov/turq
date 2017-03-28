@@ -14,6 +14,22 @@ Basics
         error(404)
 
 
+“RESTful” routing
+-----------------
+
+::
+
+    if route('/v1/products/:product_id'):
+        if GET or HEAD:
+            json({'id': int(product_id),
+                  'inStock': True})
+        elif PUT:
+            # Pretend that we saved it
+            json(request.json)
+        elif DELETE:
+            status(204)   # No Content
+
+
 Request details
 ---------------
 

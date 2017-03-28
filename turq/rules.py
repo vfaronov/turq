@@ -4,6 +4,7 @@ import cgi
 import contextlib
 import json
 import io
+import re
 import socket
 import ssl
 import time
@@ -166,6 +167,22 @@ class RulesContext:
     def json(self, obj):
         self.header('Content-Type', 'application/json')
         self.body(json.dumps(obj))
+
+    def route(self, spec):
+        # Convert our simplistic route format to a regex to match the path.
+        # First, we need to escape dots and such.
+        spec = re.escape(spec)
+        # This had the side effect of escaping colon as well,
+        # so we need to compensate for it (note the backslashes):
+        regex = '^%s$' % re.sub(r'\\:([A-Za-z_][A-Za-z0-9_]*)',
+                                lambda m: '(?P<%s>[^/]+)' % m.group(1),
+                                spec)
+        match = re.match(regex, self.path)
+        if match:
+            self._scope.update(match.groupdict())
+            return True
+        else:
+            return False
 
 
 class Request:
