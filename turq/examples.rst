@@ -120,6 +120,16 @@ You can override TLS like this::
             '/v1/articles', tls=True)
 
 
+Cross-origin resource sharing
+-----------------------------
+
+``cors()`` adds the right ``Access-Control-*`` headers, and handles
+preflight requests automatically::
+
+    cors()
+    json({'some': 'data'})
+
+
 Random responses
 ----------------
 

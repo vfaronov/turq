@@ -49,7 +49,10 @@ class RulesContext:
         )
         self._response = Response()
         self._scope = self._build_scope()
-        exec(self._code, self._scope)        # pylint: disable=exec-used
+        try:
+            exec(self._code, self._scope)        # pylint: disable=exec-used
+        except SkipRemainingRules:
+            pass
 
         # Depending on the rules, at this point the request body may or may not
         # have been received, and the response may or may not have been sent.
@@ -214,6 +217,25 @@ class RulesContext:
 
     def send_raw(self, data):
         self._handler.send_raw(force_bytes(data, 'utf-8'))
+
+    def cors(self):
+        headers = self.request.headers
+        self.header('Access-Control-Allow-Origin', headers.get('Origin', '*'))
+        self.header('Access-Control-Allow-Credentials', 'true')
+        if self.method == 'OPTIONS' and 'Origin' in headers:
+            # Preflight request
+            self.status(200)
+            self.header('Access-Control-Allow-Methods',
+                        headers.get('Access-Control-Request-Method', ''))
+            self.header('Access-Control-Allow-Headers',
+                        headers.get('Access-Control-Request-Headers', ''))
+            self.body('')
+            raise SkipRemainingRules()
+
+
+class SkipRemainingRules(Exception):
+
+    pass
 
 
 class Request:

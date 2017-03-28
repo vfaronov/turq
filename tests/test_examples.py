@@ -310,3 +310,26 @@ def test_switching_protocols_1_no_upgrade(example):
                      b'Connection: Upgrade\r\n'
                      b'\r\n')
         assert b'HTTP/1.1 200 OK\r\n' in sock.recv(4096)
+
+
+def test_cross_origin_resource_sharing_1_simple(example):
+    resp = example.request('GET', '/',
+                           headers={'Origin': 'http://example.com'})
+    assert resp.status_code == 200
+    assert resp.headers['Access-Control-Allow-Origin'] == 'http://example.com'
+    assert resp.headers['Access-Control-Allow-Credentials'] == 'true'
+    assert resp.json() == {'some': 'data'}
+
+
+def test_cross_origin_resource_sharing_1_preflight(example):
+    resp = example.request(
+        'OPTIONS', '/',
+        headers={'Origin': 'http://example.com',
+                 'Access-Control-Request-Method': 'PUT',
+                 'Access-Control-Request-Headers': 'content-type'})
+    assert resp.status_code == 200
+    assert resp.headers['Access-Control-Allow-Origin'] == 'http://example.com'
+    assert resp.headers['Access-Control-Allow-Credentials'] == 'true'
+    assert resp.headers['Access-Control-Allow-Methods'] == 'PUT'
+    assert resp.headers['Access-Control-Allow-Headers'] == 'content-type'
+    assert resp.text == ''
