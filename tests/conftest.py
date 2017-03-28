@@ -18,7 +18,10 @@ class TurqInstance:
 
     def __init__(self):
         self.mock_hostname = 'localhost'
-        self.mock_port = 13085
+        # Test instance listens on port 13095 instead of the default 13085,
+        # to make it easier to run tests while also testing Turq manually.
+        # Of course, ideally it should be a random free port instead.
+        self.mock_port = 13095
         self.extra_args = []
         self._process = None
 
