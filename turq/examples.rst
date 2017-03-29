@@ -239,6 +239,7 @@ Once you call ``chunk()``, the response begins streaming.
 Any headers you set after that will be sent in the `trailer part`_::
 
     header('Content-Type', 'text/plain')
+    header('Trailer', 'Content-MD5')
     chunk('Hello, ')
     chunk('world!\n')
     header('Content-MD5', '746308829575e17c3331bbcb00c0898b')
