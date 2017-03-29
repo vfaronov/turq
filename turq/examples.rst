@@ -213,6 +213,16 @@ If instead you want to send a response *before* reading the request body::
 .. _100 (Continue): https://tools.ietf.org/html/rfc7231#section-6.2.1
 
 
+Custom methods
+--------------
+
+::
+
+    if method != 'FROBNICATE':
+        error(405)   # Method Not Allowed
+        header('Allow', 'FROBNICATE')
+
+
 Switching protocols
 -------------------
 

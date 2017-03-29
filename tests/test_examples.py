@@ -343,3 +343,14 @@ def test_cross_origin_resource_sharing_1_preflight(example):
 def test_body_from_file_1(example):
     resp = example.request('GET', '/')
     assert '80/tcp' in resp.text
+
+
+def test_custom_methods_1_allowed(example):
+    resp = example.request('FROBNICATE', '/some/resource')
+    assert resp.status_code == 200
+
+
+def test_custom_methods_1_not_allowed(example):
+    resp = example.request('GET', '/some/resource')
+    assert resp.status_code == 405
+    assert resp.headers['Allow'] == 'FROBNICATE'
