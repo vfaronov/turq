@@ -11,6 +11,7 @@ import time
 
 import h11
 import pytest
+from requests.auth import HTTPDigestAuth
 
 import turq.examples
 
@@ -354,3 +355,29 @@ def test_custom_methods_1_not_allowed(example):
     resp = example.request('GET', '/some/resource')
     assert resp.status_code == 405
     assert resp.headers['Allow'] == 'FROBNICATE'
+
+
+def test_authentication_1(example):
+    resp = example.request('GET', '/')
+    assert resp.status_code == 401
+    assert 'Basic realm="Turq"' in resp.headers['WWW-Authenticate']
+    resp = example.request('GET', '/', auth=('user', 'passwd'))
+    assert resp.status_code == 200
+    assert 'Super-secret page' in resp.text
+
+
+def test_authentication_2(example):
+    resp = example.request('GET', '/')
+    assert resp.status_code == 401
+    assert 'Digest realm="Turq"' in resp.headers['WWW-Authenticate']
+    resp = example.request('GET', '/', auth=HTTPDigestAuth('user', 'passwd'))
+    assert resp.status_code == 200
+
+
+def test_authentication_3(example):
+    resp = example.request('GET', '/')
+    assert resp.status_code == 401
+    assert 'Bearer scope="turq"' in resp.headers['WWW-Authenticate']
+    resp = example.request('GET', '/',
+                           headers={'Authorization': 'Bearer ZumuVcMi7N6u'})
+    assert resp.status_code == 200

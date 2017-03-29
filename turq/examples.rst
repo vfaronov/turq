@@ -101,6 +101,32 @@ Custom status code and reason
     text('Server crashed, sorry!\r\n')
 
 
+Authentication
+--------------
+
+To demand `basic`_ authentication::
+
+    basic_auth()
+    with html():
+        H.h1('Super-secret page!')
+
+This sends `401 (Unauthorized)`_ unless the request had ``Authorization``
+with the ``Basic`` scheme (credentials are ignored).
+
+Similarly for `digest`_::
+
+    digest_auth()
+
+And for `bearer`_::
+
+    bearer_auth()
+
+.. _basic: https://en.wikipedia.org/wiki/Basic_access_authentication
+.. _401 (Unauthorized): https://tools.ietf.org/html/rfc7235#section-3.1
+.. _digest: https://en.wikipedia.org/wiki/Digest_access_authentication
+.. _bearer: https://tools.ietf.org/html/rfc6750
+
+
 Body from file
 --------------
 

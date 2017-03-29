@@ -234,6 +234,23 @@ class RulesContext:
             self.body('')
             raise SkipRemainingRules()
 
+    def basic_auth(self):
+        self._require_auth('Basic', 'realm="Turq"')
+
+    def digest_auth(self):
+        self._require_auth('Digest', 'realm="Turq", qop="auth", nonce="12345"')
+
+    def bearer_auth(self):
+        self._require_auth('Bearer', 'scope="turq"')
+
+    def _require_auth(self, scheme, challenge_params):
+        authorization = self.request.headers.get('Authorization', '')
+        if not authorization.lower().startswith(scheme.lower() + ' '):
+            self.error(401)
+            self.header('WWW-Authenticate',
+                        '%s %s' % (scheme, challenge_params))
+            raise SkipRemainingRules()
+
 
 class SkipRemainingRules(Exception):
 
