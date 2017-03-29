@@ -4,7 +4,7 @@ import sys
 
 import turq.mock
 
-DEFAULT_MOCK_ADDRESS = ''       # All interfaces
+DEFAULT_ADDRESS = ''       # All interfaces
 DEFAULT_MOCK_PORT = 13085
 DEFAULT_RULES = 'error(404)\n'
 
@@ -14,24 +14,21 @@ def main():
                         format='%(asctime)s  %(levelname)-8s  %(message)s',
                         datefmt='%H:%M:%S')
     args = parse_args(sys.argv)
-    if not args.full_traceback:
-        sys.excepthook = excepthook
+    sys.excepthook = excepthook
     run(args)
 
 
 def parse_args(argv):
     parser = argparse.ArgumentParser()
-    parser.add_argument('--full-traceback', action='store_true',
-                        help='do not hide the traceback on exceptions')
-    parser.add_argument('-b', '--mock-bind', metavar='ADDRESS',
-                        default=DEFAULT_MOCK_ADDRESS,
-                        help='address for the mock server to bind to')
+    parser.add_argument('-b', '--bind', metavar='ADDRESS',
+                        default=DEFAULT_ADDRESS,
+                        help='IP address or hostname to listen on')
     parser.add_argument('-p', '--mock-port', metavar='PORT', type=int,
                         default=DEFAULT_MOCK_PORT,
                         help='port for the mock server to listen on')
-    parser.add_argument('-6', '--mock-ipv6', action='store_true',
+    parser.add_argument('-6', '--ipv6', action='store_true',
                         default=False,
-                        help='mock server listens on IPv6 instead of IPv4')
+                        help='listen on IPv6 instead of IPv4')
     parser.add_argument('-r', '--rules', metavar='PATH',
                         type=argparse.FileType('r'),
                         help='file with initial rules code')
@@ -44,8 +41,8 @@ def excepthook(_type, exc, _traceback):
 
 def run(args):
     rules = args.rules.read() if args.rules else DEFAULT_RULES
-    mock_server = turq.mock.MockServer(args.mock_bind, args.mock_port,
-                                       args.mock_ipv6, rules)
+    mock_server = turq.mock.MockServer(args.bind, args.mock_port, args.ipv6,
+                                       rules)
     try:
         mock_server.serve_forever()
     except KeyboardInterrupt:

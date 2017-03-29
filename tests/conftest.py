@@ -28,7 +28,7 @@ class TurqInstance:
 
     def __enter__(self):
         args = [sys.executable, '-m', 'turq.main',
-                '--mock-bind', self.mock_hostname,
+                '--bind', self.mock_hostname,
                 '--mock-port', str(self.mock_port)] + self.extra_args
         self._process = subprocess.Popen(args, stdin=subprocess.DEVNULL,
                                          stdout=subprocess.DEVNULL,
