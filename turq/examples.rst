@@ -222,10 +222,10 @@ Switching protocols
 Anything else
 -------------
 
-In the end, Turq rules are just Python code that is not sandboxed.
-You can import and use anything you like::
+In the end, Turq rules are just Python code that is not sandboxed,
+so you can import and use anything you like. For example,
+to send random binary data::
 
-    import calendar
-    cal = calendar.HTMLCalendar()
-    header('Content-Type', 'text/html')
-    body(cal.formatmonth(2017, 3))
+    import os
+    header('Content-Type', 'application/octet-stream')
+    body(os.urandom(128))

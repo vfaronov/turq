@@ -279,7 +279,9 @@ def test_html_pages_3(example):
 
 def test_anything_else_1(example):
     resp = example.request('GET', '/')
-    assert 'March 2017' in resp.text
+    assert len(resp.content) == 128
+    with pytest.raises(ValueError):         # Random binary data, not UTF-8
+        resp.content.decode('utf-8')
 
 
 def test_random_responses_1(example):
