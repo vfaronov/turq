@@ -101,6 +101,23 @@ Custom status code and reason
     text('Server crashed, sorry!\r\n')
 
 
+Redirection
+-----------
+
+::
+
+    if path == '/':
+        redirect('/index.html')
+    elif path == '/index.html':
+        html()
+
+``redirect()`` sends `302 (Found)`_ by default, but you can override::
+
+    redirect('/index.html', 307)
+
+.. _302 (Found): https://tools.ietf.org/html/rfc7231#section-6.4.3
+
+
 Authentication
 --------------
 

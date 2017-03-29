@@ -388,3 +388,15 @@ def test_compression_1(example):
     assert resp.headers['Content-Encoding'] == 'gzip'
     # Requests automatically decodes gzip
     assert 'ipsum' in resp.text
+
+
+def test_redirection_1(example):
+    resp = example.request('GET', '/')
+    assert 'Hello world!' in resp.text
+    assert len(resp.history) == 1
+    assert resp.history[0].status_code == 302
+
+
+def test_redirection_2(example):
+    resp = example.request('GET', '/', allow_redirects=False)
+    assert resp.status_code == 307

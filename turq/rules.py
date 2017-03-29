@@ -259,6 +259,11 @@ class RulesContext:
         self.body(buf.getvalue())
         self.add_header('Content-Encoding', 'gzip')
 
+    def redirect(self, location, status=302):
+        self.status(status)
+        self.header('Location', location)
+        self.text('Please see %s\r\n' % location)
+
 
 class SkipRemainingRules(Exception):
 
