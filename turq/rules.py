@@ -135,6 +135,8 @@ class RulesContext:
         del self._response.headers[name]
 
     def body(self, data):
+        if hasattr(data, 'read'):       # files
+            data = data.read()
         self._response.body = force_bytes(data, 'utf-8')
 
     def chunk(self, data):

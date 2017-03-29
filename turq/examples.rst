@@ -101,6 +101,14 @@ Custom status code and reason
     text('Server crashed, sorry!\r\n')
 
 
+Body from file
+--------------
+
+::
+
+    text(open('/etc/services'))
+
+
 Forwarding requests
 -------------------
 

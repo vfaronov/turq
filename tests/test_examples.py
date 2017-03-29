@@ -6,6 +6,7 @@
 
 import json
 import io
+import os
 import time
 
 import h11
@@ -335,3 +336,10 @@ def test_cross_origin_resource_sharing_1_preflight(example):
     assert resp.headers['Access-Control-Allow-Methods'] == 'PUT'
     assert resp.headers['Access-Control-Allow-Headers'] == 'content-type'
     assert resp.text == ''
+
+
+@pytest.mark.skipif(not os.path.exists('/etc/services'),
+                    reason='requires a specific file')
+def test_body_from_file_1(example):
+    resp = example.request('GET', '/')
+    assert '80/tcp' in resp.text
