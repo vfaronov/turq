@@ -164,6 +164,18 @@ preflight requests automatically::
     json({'some': 'data'})
 
 
+Compression
+-----------
+
+Call ``gzip()`` after setting the body::
+
+    with html():
+        # 100 paragraphs of text
+        for i in range(100):
+            H.p(lorem_ipsum())
+    gzip()
+
+
 Random responses
 ----------------
 

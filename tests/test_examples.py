@@ -381,3 +381,10 @@ def test_authentication_3(example):
     resp = example.request('GET', '/',
                            headers={'Authorization': 'Bearer ZumuVcMi7N6u'})
     assert resp.status_code == 200
+
+
+def test_compression_1(example):
+    resp = example.request('GET', '/')
+    assert resp.headers['Content-Encoding'] == 'gzip'
+    # Requests automatically decodes gzip
+    assert 'ipsum' in resp.text

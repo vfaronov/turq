@@ -2,6 +2,7 @@
 
 import cgi
 import contextlib
+import gzip
 import json
 import io
 import random
@@ -250,6 +251,13 @@ class RulesContext:
             self.header('WWW-Authenticate',
                         '%s %s' % (scheme, challenge_params))
             raise SkipRemainingRules()
+
+    def gzip(self):
+        buf = io.BytesIO()
+        with gzip.GzipFile(mode='wb', compresslevel=4, fileobj=buf) as f:
+            f.write(self._response.body)
+        self.body(buf.getvalue())
+        self.add_header('Content-Encoding', 'gzip')
 
 
 class SkipRemainingRules(Exception):
