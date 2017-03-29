@@ -3,8 +3,9 @@
 import cgi
 import contextlib
 import gzip
-import json
 import io
+import json
+import logging
 import random
 import re
 import socket
@@ -17,9 +18,10 @@ import dominate
 import dominate.tags as H
 import h11
 
-import turq.util.http
-import turq.util.logging
-from turq.util.text import force_bytes, lorem_ipsum
+from turq.util.http import (KNOWN_METHODS, date, default_reason,
+                            error_explanation, nice_header_name)
+from turq.util.logging import getNextLogger
+from turq.util.text import ellipsize, force_bytes, lorem_ipsum
 
 
 class RulesContext:
@@ -37,17 +39,21 @@ class RulesContext:
     def __init__(self, code, handler):
         self._code = code
         self._handler = handler
-        self._logger = turq.util.logging.instanceLogger(self)
 
     def _run(self):
         event = self._handler.receive_event()
         if isinstance(event, h11.ConnectionClosed):
             return
         assert isinstance(event, h11.Request)
+        # Initialize the logger here so we don't increment the counter
+        # on `ConnectionClosed` events.
+        self._logger = getNextLogger('turq.request')
         self.request = Request(
             self, event.method.decode(), event.target.decode(),
             event.http_version.decode(), _decode_headers(event.headers),
         )
+        self._logger.info('> %s', ellipsize(self.request.line, 100))
+        self._log_headers(self.request.raw_headers)
         self._response = Response()
         self._scope = self._build_scope()
         try:
@@ -61,13 +67,17 @@ class RulesContext:
         self._ensure_request_received()
         self.flush()
 
+    def _log_headers(self, headers):
+        for (name, value) in headers:
+            self._logger.debug('+ %s: %s', name, value)
+
     def _build_scope(self):
         # Assemble the global scope in which the rules will be executed.
         # This includes all "public" attributes of `RulesContext`...
         scope = {name: getattr(self, name)
                  for name in dir(self) if not name.startswith('_')}
         # ...shortcuts for common request methods
-        for method in turq.util.http.KNOWN_METHODS:
+        for method in KNOWN_METHODS:
             scope[method.replace('-', '_')] = (self.method == method)
         # ...Dominate's HTML tags library
         scope['H'] = H
@@ -97,14 +107,21 @@ class RulesContext:
                 chunks.append(event.data)
             elif isinstance(event, h11.EndOfMessage):
                 self.request._body = b''.join(chunks)
+                self._logger.debug('received request body: %d bytes',
+                                   len(self.request._body))
                 # Add any trailer part to the main headers list
-                self.request.raw_headers += _decode_headers(event.headers)
+                trailer = _decode_headers(event.headers)
+                self._log_headers(trailer)
+                self.request.raw_headers += trailer
                 break
 
     def _send_response(self, interim=False):
         self._response.finalize()
+        self._logger.info('< %s', self._response.status_line)
+        self._log_headers(self._response.raw_headers)
         cls = h11.InformationalResponse if interim else h11.Response
         self._handler.send_event(cls(
+            http_version=self._response.http_version,
             status_code=self._response.status_code,
             reason=force_bytes(self._response.reason),
             headers=_encode_headers(self._response.raw_headers),
@@ -113,9 +130,18 @@ class RulesContext:
     def _send_body(self):
         if self._response.body:
             self.chunk(self._response.body)
+        self._log_headers(self._response.raw_headers)
         self._handler.send_event(h11.EndOfMessage(
             headers=_encode_headers(self._response.raw_headers),
         ))
+
+    def debug(self):
+        if self._logger.getEffectiveLevel() > logging.DEBUG:
+            self._logger.setLevel(logging.DEBUG)
+            # Request headers were logged earlier in `_run`,
+            # but the user didn't have a chance to see them
+            # because debug logging was not yet enabled.
+            self._log_headers(self.request.raw_headers)
 
     method = property(lambda self: self.request.method)
     target = property(lambda self: self.request.target)
@@ -147,7 +173,11 @@ class RulesContext:
         # sending data in that case, so the user doesn't have to remember.
         # (204 and 304 responses also can't have a body, but those have to be
         # explicitly selected by the user, so it's their problem.)
-        if self.method != 'HEAD':
+        if self.method == 'HEAD':
+            self._logger.debug('not sending %d bytes of response body '
+                               'because request was HEAD', len(data))
+        else:
+            self._logger.debug('sending %d bytes of response body', len(data))
             self._handler.send_event(h11.Data(data=force_bytes(data)))
 
     def content_length(self):
@@ -165,7 +195,9 @@ class RulesContext:
 
     def forward(self, hostname, port, target, tls=None):
         self._ensure_request_received()     # Get the trailer part, if any
+        self._logger.debug('forwarding to %s port %d', hostname, port)
         self._response = forward(self.request, hostname, port, target, tls)
+        self._logger.debug('upstream response: %s', self._response.status_line)
 
     def text(self, content):
         self.header('Content-Type', 'text/plain; charset=utf-8')
@@ -173,7 +205,7 @@ class RulesContext:
 
     def error(self, code):
         self.status(code)
-        self.text('Error! %s\r\n' % turq.util.http.error_explanation(code))
+        self.text('Error! %s\r\n' % error_explanation(code))
 
     def json(self, obj):
         self.header('Content-Type', 'application/json')
@@ -219,6 +251,7 @@ class RulesContext:
         return random.random() < p
 
     def send_raw(self, data):
+        self._logger.info('sending %d bytes of raw data', len(data))
         self._handler.send_raw(force_bytes(data, 'utf-8'))
 
     def cors(self):
@@ -226,7 +259,7 @@ class RulesContext:
         self.header('Access-Control-Allow-Origin', headers.get('Origin', '*'))
         self.header('Access-Control-Allow-Credentials', 'true')
         if self.method == 'OPTIONS' and 'Origin' in headers:
-            # Preflight request
+            self._logger.debug('responding to CORS preflight request')
             self.status(200)
             self.header('Access-Control-Allow-Methods',
                         headers.get('Access-Control-Request-Method', ''))
@@ -247,6 +280,7 @@ class RulesContext:
     def _require_auth(self, scheme, challenge_params):
         authorization = self.request.headers.get('Authorization', '')
         if not authorization.lower().startswith(scheme.lower() + ' '):
+            self._logger.debug('missing required Authorization: %s', scheme)
             self.error(401)
             self.header('WWW-Authenticate',
                         '%s %s' % (scheme, challenge_params))
@@ -285,6 +319,10 @@ class Request:
         self._body = None
         self._json = None
         self._form = None
+
+        # Reconstructed request-line, for logging.
+        self.line = '%s %s HTTP/%s' % (self.method, self.target,
+                                       self.http_version)
 
     @property
     def body(self):
@@ -325,6 +363,7 @@ class Request:
 class Response:
 
     def __init__(self):
+        self.http_version = '1.1'
         self.status_code = 200
         self.reason = None
         self.raw_headers = []
@@ -332,23 +371,34 @@ class Response:
         self.body = b''
 
     def finalize(self):
+        # h11 only sends HTTP/1.1.
+        self.http_version = '1.1'
+
         # h11 sends an empty reason phrase by default. While this is
         # correct with regard to the protocol, I think it will be
         # more convenient and less surprising to the user if we fill it.
         if self.reason is None:
-            self.reason = turq.util.http.default_reason(self.status_code)
+            self.reason = default_reason(self.status_code)
 
         # RFC 7231 Section 7.1.1.2 requires a ``Date`` header
         # on all 2xx, 3xx, and 4xx responses.
         if 200 <= self.status_code <= 499 and 'Date' not in self.headers:
-            self.headers['Date'] = turq.util.http.date()
+            self.headers['Date'] = date()
+
+    @property
+    def status_line(self):
+        # Reconstructed status-line, for logging.
+        return 'HTTP/%s %d %s' % (self.http_version,
+                                  self.status_code, self.reason)
 
 
 def _decode_headers(headers):
     # Header values can contain arbitrary bytes. Decode them from ISO-8859-1,
     # which is the historical encoding of HTTP. Decoding bytes from ISO-8859-1
-    # is a lossless operation, it cannot fail.
-    return [(name.decode(), value.decode('iso-8859-1'))
+    # is a lossless operation, it cannot fail. Also, h11 gives us all header
+    # names in lowercase, but we force them to Message-Case for a more readable
+    # output in `_log_headers`.
+    return [(nice_header_name(name.decode()), value.decode('iso-8859-1'))
             for (name, value) in headers]
 
 def _encode_headers(headers):
@@ -400,13 +450,13 @@ def forward(request, hostname, port, target, tls=None):
             if event is h11.NEED_DATA:
                 hconn.receive_data(sock.recv(4096))
             elif isinstance(event, h11.Response):
+                response.http_version = event.http_version.decode()
                 response.status_code = event.status_code
                 # Reason phrases can contain arbitrary bytes.
                 # See above regarding ISO-8859-1.
                 response.reason = event.reason.decode('iso-8859-1')
                 response.raw_headers[:] = _forward_headers(
-                    _decode_headers(event.headers),
-                    event.http_version.decode())
+                    _decode_headers(event.headers), response.http_version)
             elif isinstance(event, h11.Data):
                 response.body += event.data
             elif isinstance(event, h11.EndOfMessage):

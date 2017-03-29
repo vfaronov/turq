@@ -9,7 +9,7 @@ import h11
 
 from turq.rules import RulesContext
 import turq.util.http
-import turq.util.logging
+from turq.util.logging import getNextLogger
 
 
 class MockServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
@@ -21,29 +21,26 @@ class MockServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
                  bind_and_activate=True):
         self.address_family = socket.AF_INET6 if ipv6 else socket.AF_INET
         super().__init__((hostname, port), MockHandler, bind_and_activate)
-        self._logger = turq.util.logging.instanceLogger(self)
-        self.set_rules(initial_rules)
-
-    def set_rules(self, rules):
-        self.rules = rules
-        self._logger.info('new rules installed')
+        self.rules = initial_rules
 
 
 class MockHandler(socketserver.StreamRequestHandler):
 
     def setup(self):
         super().setup()
-        self._logger = turq.util.logging.instanceLogger(self)
+        self._logger = getNextLogger('turq.connection')
         self._socket = self.request    # To reduce confusion with HTTP requests
         self._hconn = h11.Connection(our_role=h11.SERVER)
 
     def handle(self):
+        self._logger.info('new connection from %s', self.client_address[0])
         try:
             while True:
                 # pylint: disable=protected-access
                 # `RulesContext` takes care of handling one complete
                 # request/response cycle, including reading the request.
                 RulesContext(self.server.rules, self)._run()
+                self._logger.debug('states: %r', self._hconn.states)
                 if self._hconn.states == {h11.CLIENT: h11.DONE,
                                           h11.SERVER: h11.DONE}:
                     # Connection persists, proceed to the next cycle.
@@ -53,7 +50,8 @@ class MockHandler(socketserver.StreamRequestHandler):
                     # or because somebody sent "Connection: close").
                     break
         except Exception as e:
-            self._logger.error('error in request cycle: %s', e)
+            self._logger.error('fatal error: %s', str(e))
+            self._logger.debug('states: %r', self._hconn.states)
             if self._hconn.our_state in [h11.SEND_RESPONSE, h11.IDLE]:
                 self._send_fatal_error(e)
 
@@ -71,11 +69,9 @@ class MockHandler(socketserver.StreamRequestHandler):
             if event is h11.NEED_DATA:
                 self._hconn.receive_data(self._socket.recv(4096))
             else:
-                self._logger.debug('received %r', event)
                 return event
 
     def send_event(self, event):
-        self._logger.debug('sending %r', event)
         data = self._hconn.send(event)
         self._socket.sendall(data)
 
@@ -84,6 +80,7 @@ class MockHandler(socketserver.StreamRequestHandler):
 
     def _send_fatal_error(self, exc):
         status_code = getattr(exc, 'error_status_hint', 500)
+        self._logger.debug('sending error response, status %d', status_code)
         try:
             self.send_event(h11.Response(
                 status_code=status_code,
@@ -103,6 +100,6 @@ class MockHandler(socketserver.StreamRequestHandler):
         try:
             self._socket.shutdown(socket.SHUT_WR)
             while self._socket.recv(1024):
-                pass
+                self._logger.debug('discarding data from client')
         except OSError:     # The client may have already closed the connection
             pass

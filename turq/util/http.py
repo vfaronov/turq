@@ -30,3 +30,8 @@ def error_explanation(status_code):
 
 def date():
     return werkzeug.http.http_date(datetime.utcnow())
+
+
+def nice_header_name(name):
+    # "cache-control" -> "Cache-Control"
+    return '-'.join(word.capitalize() for word in name.split('-'))

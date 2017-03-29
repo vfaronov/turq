@@ -400,3 +400,9 @@ def test_redirection_1(example):
 def test_redirection_2(example):
     resp = example.request('GET', '/', allow_redirects=False)
     assert resp.status_code == 307
+
+
+def test_inspecting_requests_1(example):
+    resp = example.request('GET', '/')
+    resp.raise_for_status()
+    # The actual logging will be checked somewhere else.

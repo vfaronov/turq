@@ -152,6 +152,18 @@ Body from file
     text(open('/etc/services'))
 
 
+Inspecting requests
+-------------------
+
+To see what the client sends, including headers (but not the raw body),
+enable verbose diagnostics::
+
+    debug()
+
+and watch the console output. (Alternatively, for even more diagnostics,
+run Turq with the ``--verbose`` option.)
+
+
 Forwarding requests
 -------------------
 

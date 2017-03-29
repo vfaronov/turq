@@ -38,3 +38,17 @@ def lorem_ipsum():
         ).capitalize() + '.'
         for _ in range(random.randint(5, 10))
     )
+
+
+def ellipsize(s, max_length=60):
+    """
+    >>> print(ellipsize(u'lorem ipsum dolor sit amet', 40))
+    lorem ipsum dolor sit amet
+    >>> print(ellipsize(u'lorem ipsum dolor sit amet', 20))
+    lorem ipsum dolor...
+    """
+    if len(s) > max_length:
+        ellipsis = '...'
+        return s[:(max_length - len(ellipsis))] + ellipsis
+    else:
+        return s

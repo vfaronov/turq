@@ -27,6 +27,7 @@ setup(
         'dominate >= 2.3.1',
         'Werkzeug >= 0.12.1',
         'docutils >= 0.13.1',
+        'coloredlogs >= 6.0',
     ],
     classifiers=[
         'Intended Audience :: Developers',
