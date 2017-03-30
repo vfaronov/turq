@@ -2,6 +2,7 @@
 
 import html
 import logging
+import mimetypes
 import pkgutil
 import socket
 import socketserver
@@ -24,6 +25,7 @@ def make_server(hostname, port, ipv6, mock_server):
     editor = falcon.API(media_type='text/plain; charset=utf-8',
                         middleware=middleware)
     editor.add_route('/', RootResource(mock_server))
+    editor.add_route('/static/{filename}', StaticResource())
     editor.set_error_serializer(text_error_serializer)
     return wsgiref.simple_server.make_server(
         hostname, port, editor,
@@ -105,3 +107,14 @@ class RootResource:
             resp.status = falcon.HTTP_303   # See Other
             resp.location = '/'
             resp.body = 'Rules installed successfully.'
+
+
+class StaticResource:
+
+    def on_get(self, req, resp, filename):
+        try:
+            resp.data = pkgutil.get_data('turq', 'editor/%s' % filename)
+        except FileNotFoundError:
+            raise falcon.HTTPNotFound()
+        else:
+            (resp.content_type, _) = mimetypes.guess_type(filename)

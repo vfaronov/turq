@@ -1,0 +1,67 @@
+body {
+    color: #000000;
+    background: #FDFDFD;
+    font-family: sans-serif;
+    margin: 0;
+}
+
+main {
+    padding: 2vw;
+}
+
+aside {
+    padding: 2vw;
+    background: #EEEEEE;
+}
+
+/* Unless the display is super narrow, show the examples on the side. */
+@media (min-width: 60em) {
+    body {
+        display: flex;
+        overflow: hidden;
+    }
+    main {
+        flex-grow: 3;
+        width: 0;
+    }
+    aside {
+        height: calc(100vh - 4vw);          /* 4vw of padding */
+        overflow-y: scroll;
+        flex-grow: 2;
+        width: 0;
+    }
+}
+
+a[href] {
+    color: #0E807B;
+}
+
+h1, h2 {
+    margin-top: 0;
+}
+
+textarea {
+    /* Take up all the space except for padding (4vw) and headers/buttons/etc.
+     * (adding up to roughly 10em, precision doesn't matter here). */
+    height: calc(100vh - 4vw - 10em);
+    border: 1px solid darkgrey;
+    padding: 0.15em;
+    width: calc(100% - 0.3em - 2px);   /* 0.3em of padding and 2px of border */
+    /* Do not wrap long lines. */
+    white-space: pre;
+    overflow-x: scroll;
+}
+
+pre {
+    background: #FAFAFA;
+    border-left: solid 0.5em #0E807B;
+    padding: 0.5em 1em;
+    overflow: hidden;
+    margin-right: 0;
+}
+
+div.submit {
+    margin-top: 1em;
+    display: flex;
+    justify-content: space-between;
+}
