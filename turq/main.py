@@ -54,7 +54,7 @@ def excepthook(_type, exc, _traceback):
 
 
 def setup_logging(args):
-    fmt = '%(asctime)-10s %(name)-21s %(message)s'
+    fmt = '%(asctime)-8s %(name)-19s %(message)s'
     datefmt = '%H:%M:%S'
     if args.no_color:
         formatter = logging.Formatter(fmt, datefmt)
@@ -101,9 +101,8 @@ def run(args):
 
 def show_server_info(label, server):
     (host, port, *_) = server.server_address
-    logging.getLogger('turq').info('%s on %s port %d - try %s',
-                                   label, host, port,
-                                   guess_external_url(host, port))
+    logging.getLogger('turq').info('%s on port %d - try %s',
+                                   label, port, guess_external_url(host, port))
 
 
 if __name__ == '__main__':
