@@ -83,6 +83,8 @@ class RootResource:
             examples=turq.examples.load_html(initial_header_level=3))
 
     def on_post(self, req, resp):
+        # Need `werkzeug.formparser` because JavaScript sends ``FormData``,
+        # which is encoded as multipart.
         (_, form, _) = werkzeug.formparser.parse_form_data(req.env)
         if form.get('do') == 'Shutdown':
             self.do_shutdown(resp)

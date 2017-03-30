@@ -72,3 +72,12 @@ div.submit {
     display: flex;
     justify-content: space-between;
 }
+
+.status {
+    text-align: center;
+}
+
+.status.error {
+    color: #720000;
+    font-weight: bold;
+}

@@ -31,6 +31,7 @@
                     cols=79 rows=15>$rules</textarea>
                 <div class=submit>
                     <input type=submit name=do value=Install accesskey=i>
+                    <div class=status></div>
                     <input type=submit name=do value=Shutdown accesskey=s>
                 </div>
             </form>
