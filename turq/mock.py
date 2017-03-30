@@ -50,7 +50,7 @@ class MockHandler(socketserver.StreamRequestHandler):
                     # or because somebody sent "Connection: close").
                     break
         except Exception as e:
-            self._logger.error('fatal error: %s', str(e))
+            self._logger.error('error: %s', e)
             self._logger.debug('states: %r', self._hconn.states)
             if self._hconn.our_state in [h11.SEND_RESPONSE, h11.IDLE]:
                 self._send_fatal_error(e)

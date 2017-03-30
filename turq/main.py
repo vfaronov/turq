@@ -41,7 +41,7 @@ def parse_args(argv):
 
 
 def excepthook(_type, exc, _traceback):
-    sys.stderr.write('turq: fatal error: %r\n' % exc)
+    sys.stderr.write('turq: error: %s\n' % exc)
 
 
 def setup_logging(args):
