@@ -8,7 +8,13 @@
         <!-- Examples are rendered by docutils, and we cannot change
              link targets in there. -->
         <base target=_blank>
+        <link rel=stylesheet href=/static/codemirror/lib/codemirror.css>
         <link rel=stylesheet href=/static/editor.css>
+        <script src=/static/codemirror/lib/codemirror.js></script>
+        <script src=/static/codemirror/mode/python/python.js></script>
+        <script src=/static/codemirror/addon/runmode/runmode.js></script>
+        <script src=/static/codemirror/addon/runmode/colorize.js></script>
+        <script src=/static/editor.js></script>
     </head>
 
     <body>

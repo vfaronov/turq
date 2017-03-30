@@ -20,7 +20,11 @@ setup(
     author_email='vfaronov@gmail.com',
     license='ISC',
     packages=['turq'],
-    package_data={'turq': ['editor/*', 'examples.rst']},
+    # Do not care about the ugliness of these globs because
+    # any discrepancies will be caught by check-manifest.
+    package_data={'turq': ['editor/*',
+                           'editor/codemirror/*/*', 'editor/codemirror/*/*/*',
+                           'examples.rst']},
     entry_points={'console_scripts': ['turq=turq.main:main']},
     install_requires=[
         'h11 >= 0.7.0',

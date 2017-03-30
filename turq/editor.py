@@ -8,6 +8,7 @@ import socket
 import socketserver
 import string
 import threading
+import urllib.parse
 import wsgiref.simple_server
 
 import falcon
@@ -18,6 +19,9 @@ from turq.util.falcon import DisableCache
 from turq.util.http import guess_external_url
 
 
+STATIC_PREFIX = '/static/'
+
+
 def make_server(host, port, ipv6, mock_server):
     # This server is very volatile: who knows what will be listening on this
     # host and port tomorrow? So, disable caching completely. We don't want
@@ -26,7 +30,7 @@ def make_server(host, port, ipv6, mock_server):
     editor = falcon.API(media_type='text/plain; charset=utf-8',
                         middleware=middleware)
     editor.add_route('/', RootResource(mock_server))
-    editor.add_route('/static/{filename}', StaticResource())
+    editor.add_sink(static_file, STATIC_PREFIX)
     editor.set_error_serializer(text_error_serializer)
     return wsgiref.simple_server.make_server(
         host, port, editor,
@@ -111,12 +115,12 @@ class RootResource:
             resp.body = 'Rules installed successfully.'
 
 
-class StaticResource:
-
-    def on_get(self, req, resp, filename):
-        try:
-            resp.data = pkgutil.get_data('turq', 'editor/%s' % filename)
-        except FileNotFoundError:
-            raise falcon.HTTPNotFound()
-        else:
-            (resp.content_type, _) = mimetypes.guess_type(filename)
+def static_file(req, resp):
+    path = urllib.parse.urljoin('/', req.path)      # Avoid path traversal
+    filename = path[len(STATIC_PREFIX):]
+    try:
+        resp.data = pkgutil.get_data('turq', 'editor/%s' % filename)
+    except FileNotFoundError:
+        raise falcon.HTTPNotFound()
+    else:
+        (resp.content_type, _) = mimetypes.guess_type(filename)

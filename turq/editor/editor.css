@@ -40,11 +40,18 @@ h1, h2 {
     margin-top: 0;
 }
 
-textarea {
+.CodeMirror, textarea {
     /* Take up all the space except for padding (4vw) and headers/buttons/etc.
      * (adding up to roughly 10em, precision doesn't matter here). */
     height: calc(100vh - 4vw - 10em);
     border: 1px solid darkgrey;
+}
+
+.CodeMirror {
+    width: calc(100% - 2px);           /* 2px of border */
+}
+
+textarea {
     padding: 0.15em;
     width: calc(100% - 0.3em - 2px);   /* 0.3em of padding and 2px of border */
     /* Do not wrap long lines. */
