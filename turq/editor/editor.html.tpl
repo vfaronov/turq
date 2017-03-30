@@ -15,7 +15,10 @@
         <main>
             <header>
                 <h1>Turq</h1>
-                <p>Serving on $hostname:$port</p>
+                <p>
+                    Mock server is listening on $mock_host port $mock_port —
+                    try <a href="$mock_url">$mock_url</a>
+                </p>
             </header>
             <form method=POST action=/ target=_self>
                 <textarea name=rules accesskey=r

@@ -15,9 +15,10 @@ import werkzeug.formparser
 
 import turq.examples
 from turq.util.falcon import DisableCache
+from turq.util.http import guess_external_url
 
 
-def make_server(hostname, port, ipv6, mock_server):
+def make_server(host, port, ipv6, mock_server):
     # This server is very volatile: who knows what will be listening on this
     # host and port tomorrow? So, disable caching completely. We don't want
     # e.g. Chrome to prompt to "Show saved copy" when Turq is not running, etc.
@@ -28,7 +29,7 @@ def make_server(hostname, port, ipv6, mock_server):
     editor.add_route('/static/{filename}', StaticResource())
     editor.set_error_serializer(text_error_serializer)
     return wsgiref.simple_server.make_server(
-        hostname, port, editor,
+        host, port, editor,
         IPv6EditorServer if ipv6 else EditorServer,
         EditorHandler)
 
@@ -70,9 +71,10 @@ class RootResource:
 
     def on_get(self, req, resp):
         resp.content_type = 'text/html; charset=utf-8'
-        (hostname, port) = self.mock_server.server_address
+        (mock_host, mock_port, *_) = self.mock_server.server_address
         resp.body = self.template.substitute(
-            hostname=html.escape(hostname), port=port,
+            mock_host=html.escape(mock_host), mock_port=mock_port,
+            mock_url=html.escape(guess_external_url(mock_host, mock_port)),
             rules=html.escape(self.mock_server.rules),
             examples=turq.examples.load_html(initial_header_level=3))
 

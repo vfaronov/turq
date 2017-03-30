@@ -7,6 +7,7 @@ import coloredlogs
 
 import turq.editor
 import turq.mock
+from turq.util.http import guess_external_url
 
 DEFAULT_ADDRESS = ''       # All interfaces
 DEFAULT_MOCK_PORT = 13085
@@ -81,6 +82,12 @@ def run(args):
                                                 args.ipv6, mock_server)
         threading.Thread(target=editor_server.serve_forever).start()
 
+    # Show mock server info just before going into `serve_forever`,
+    # to minimize the delay between printing it and actually listening
+    show_server_info('mock', mock_server)
+    if editor_server is not None:
+        show_server_info('editor', editor_server)
+
     try:
         mock_server.serve_forever()
     except KeyboardInterrupt:
@@ -90,6 +97,13 @@ def run(args):
     if editor_server is not None:
         editor_server.shutdown()
         editor_server.server_close()
+
+
+def show_server_info(label, server):
+    (host, port, *_) = server.server_address
+    logging.getLogger('turq').info('%s on %s port %d - try %s',
+                                   label, host, port,
+                                   guess_external_url(host, port))
 
 
 if __name__ == '__main__':

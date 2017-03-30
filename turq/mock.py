@@ -18,10 +18,10 @@ class MockServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     allow_reuse_address = True    # Prevent "Address already in use" on restart
     daemon_threads = True
 
-    def __init__(self, hostname, port, ipv6, initial_rules,
+    def __init__(self, host, port, ipv6, initial_rules,
                  bind_and_activate=True):
         self.address_family = socket.AF_INET6 if ipv6 else socket.AF_INET
-        super().__init__((hostname, port), MockHandler, bind_and_activate)
+        super().__init__((host, port), MockHandler, bind_and_activate)
         self.install_rules(initial_rules)
 
     def install_rules(self, rules):

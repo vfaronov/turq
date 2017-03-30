@@ -18,7 +18,7 @@ class TurqInstance:
     """Spins up and controls a live instance of Turq for testing."""
 
     def __init__(self):
-        self.mock_hostname = 'localhost'
+        self.mock_host = 'localhost'
         # Test instance listens on port 13095 instead of the default 13085,
         # to make it easier to run tests while also testing Turq manually.
         # Of course, ideally it should be a random free port instead.
@@ -29,8 +29,7 @@ class TurqInstance:
 
     def __enter__(self):
         args = [sys.executable, '-m', 'turq.main',
-                '--bind', self.mock_hostname,
-                '--mock-port', str(self.mock_port),
+                '--bind', self.mock_host, '--mock-port', str(self.mock_port),
                 '--editor-port', str(self.editor_port)] + self.extra_args
         self._process = subprocess.Popen(args, stdin=subprocess.DEVNULL,
                                          stdout=subprocess.DEVNULL,
@@ -57,7 +56,7 @@ class TurqInstance:
         raise RuntimeError('Turq failed to start')
 
     def connect(self):
-        return socket.create_connection((self.mock_hostname, self.mock_port),
+        return socket.create_connection((self.mock_host, self.mock_port),
                                         timeout=5)
 
     def send(self, *events):
@@ -74,5 +73,5 @@ class TurqInstance:
                     yield event
 
     def request(self, method, url, **kwargs):
-        full_url = 'http://%s:%d%s' % (self.mock_hostname, self.mock_port, url)
+        full_url = 'http://%s:%d%s' % (self.mock_host, self.mock_port, url)
         return requests.request(method, full_url, **kwargs)

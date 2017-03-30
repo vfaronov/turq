@@ -1,5 +1,6 @@
 from datetime import datetime
 import http.server
+import socket
 
 import werkzeug.http
 
@@ -35,3 +36,20 @@ def date():
 def nice_header_name(name):
     # "cache-control" -> "Cache-Control"
     return '-'.join(word.capitalize() for word in name.split('-'))
+
+
+def guess_external_url(local_host, port):
+    """Return a URL that is most likely to route to `local_host` from outside.
+
+    The point is that we may be running on a remote host from the user's
+    point of view, so they can't access `local_host` from a Web browser just
+    by typing ``http://localhost:12345/``.
+    """
+    if local_host in ['0.0.0.0', '::']:         # Listening on all interfaces
+        local_host = socket.getfqdn()
+        # https://github.com/vfaronov/turq/issues/9
+        if local_host.lower().rstrip('.').endswith('.arpa'):
+            local_host = 'localhost'          # Welp, not much we can do here.
+    if ':' in local_host:     # IPv6 literal
+        local_host = '[%s]' % local_host
+    return 'http://%s:%d/' % (local_host, port)
