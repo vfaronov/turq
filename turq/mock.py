@@ -2,6 +2,7 @@
 # It tries to be mostly HTTP-compliant by default, but it doesn't care at all
 # about performance. In particular, there are no explicit timeouts.
 
+import logging
 import socket
 import socketserver
 
@@ -21,7 +22,12 @@ class MockServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
                  bind_and_activate=True):
         self.address_family = socket.AF_INET6 if ipv6 else socket.AF_INET
         super().__init__((hostname, port), MockHandler, bind_and_activate)
-        self.rules = initial_rules
+        self.install_rules(initial_rules)
+
+    def install_rules(self, rules):
+        self.compiled_rules = compile(rules, '<rules>', 'exec')
+        self.rules = rules
+        logging.getLogger('turq').info('new rules installed')
 
 
 class MockHandler(socketserver.StreamRequestHandler):
@@ -39,7 +45,7 @@ class MockHandler(socketserver.StreamRequestHandler):
                 # pylint: disable=protected-access
                 # `RulesContext` takes care of handling one complete
                 # request/response cycle, including reading the request.
-                RulesContext(self.server.rules, self)._run()
+                RulesContext(self.server.compiled_rules, self)._run()
                 self._logger.debug('states: %r', self._hconn.states)
                 if self._hconn.states == {h11.CLIENT: h11.DONE,
                                           h11.SERVER: h11.DONE}:
