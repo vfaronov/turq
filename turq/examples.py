@@ -17,5 +17,14 @@ def load_pairs():
     return parsed
 
 
+def load_html(initial_header_level):
+    # Render an HTML fragment ready for inclusion into a page.
+    rst_code = _load_rst()
+    parts = docutils.core.publish_parts(
+        rst_code, writer_name='html',
+        settings_overrides={'initial_header_level': initial_header_level})
+    return parts['fragment']
+
+
 def _load_rst():
     return pkgutil.get_data('turq', 'examples.rst')

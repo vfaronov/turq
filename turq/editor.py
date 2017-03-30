@@ -12,6 +12,7 @@ import wsgiref.simple_server
 import falcon
 import werkzeug.formparser
 
+import turq.examples
 from turq.util.falcon import DisableCache
 
 
@@ -70,7 +71,8 @@ class RootResource:
         (hostname, port) = self.mock_server.server_address
         resp.body = self.template.substitute(
             hostname=html.escape(hostname), port=port,
-            rules=html.escape(self.mock_server.rules))
+            rules=html.escape(self.mock_server.rules),
+            examples=turq.examples.load_html(initial_header_level=3))
 
     def on_post(self, req, resp):
         (_, form, _) = werkzeug.formparser.parse_form_data(req.env)
