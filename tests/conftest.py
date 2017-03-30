@@ -23,13 +23,15 @@ class TurqInstance:
         # to make it easier to run tests while also testing Turq manually.
         # Of course, ideally it should be a random free port instead.
         self.mock_port = 13095
+        self.editor_port = 13096
         self.extra_args = []
         self._process = None
 
     def __enter__(self):
         args = [sys.executable, '-m', 'turq.main',
                 '--bind', self.mock_hostname,
-                '--mock-port', str(self.mock_port)] + self.extra_args
+                '--mock-port', str(self.mock_port),
+                '--editor-port', str(self.editor_port)] + self.extra_args
         self._process = subprocess.Popen(args, stdin=subprocess.DEVNULL,
                                          stdout=subprocess.DEVNULL,
                                          stderr=subprocess.DEVNULL)

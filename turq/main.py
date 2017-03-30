@@ -1,13 +1,16 @@
 import argparse
 import logging
 import sys
+import threading
 
 import coloredlogs
 
+import turq.editor
 import turq.mock
 
 DEFAULT_ADDRESS = ''       # All interfaces
 DEFAULT_MOCK_PORT = 13085
+DEFAULT_EDITOR_PORT = 13086
 DEFAULT_RULES = 'error(404)\n'
 
 
@@ -25,12 +28,17 @@ def parse_args(argv):
                         help='print more verbose diagnostics')
     parser.add_argument('--no-color', action='store_true',
                         help='do not colorize console output')
+    parser.add_argument('--no-editor', action='store_true',
+                        help='disable the built-in Web-based rules editor')
     parser.add_argument('-b', '--bind', metavar='ADDRESS',
                         default=DEFAULT_ADDRESS,
                         help='IP address or hostname to listen on')
     parser.add_argument('-p', '--mock-port', metavar='PORT', type=int,
                         default=DEFAULT_MOCK_PORT,
                         help='port for the mock server to listen on')
+    parser.add_argument('--editor-port', metavar='PORT', type=int,
+                        default=DEFAULT_EDITOR_PORT,
+                        help='port for the rules editor to listen on')
     parser.add_argument('-6', '--ipv6', action='store_true',
                         default=False,
                         help='listen on IPv6 instead of IPv4')
@@ -65,11 +73,23 @@ def run(args):
     rules = args.rules.read() if args.rules else DEFAULT_RULES
     mock_server = turq.mock.MockServer(args.bind, args.mock_port, args.ipv6,
                                        rules)
+
+    if args.no_editor:
+        editor_server = None
+    else:
+        editor_server = turq.editor.make_server(args.bind, args.editor_port,
+                                                args.ipv6, mock_server)
+        threading.Thread(target=editor_server.serve_forever).start()
+
     try:
         mock_server.serve_forever()
     except KeyboardInterrupt:
         mock_server.server_close()
         sys.stderr.write('\n')
+
+    if editor_server is not None:
+        editor_server.shutdown()
+        editor_server.server_close()
 
 
 if __name__ == '__main__':
