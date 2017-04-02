@@ -40,6 +40,17 @@ h1, h2 {
     margin-top: 0;
 }
 
+input {
+    font-size: 1em;          /* somehow is smaller by default in Safari */
+}
+
+.CodeMirror, textarea, pre, tt {
+    /* http://meyerweb.com/eric/thoughts/2010/02/12/fixed-monospace-sizing/
+     * (current Safari doesn't seem to need that serif trick either) */
+    font-family: Consolas, monospace;
+    font-size: 1em;
+}
+
 .CodeMirror, textarea {
     /* Take up all the space except for padding (4vw) and headers/buttons/etc.
      * (adding up to roughly 10em, precision doesn't matter here). */
@@ -73,11 +84,20 @@ div.submit {
     justify-content: space-between;
 }
 
+input[value=Install] {
+    order: 1;
+}
+
 .status {
+    order: 2;
     text-align: center;
 }
 
 .status.error {
     color: #720000;
     font-weight: bold;
+}
+
+input[value=Shutdown] {
+    order: 3;
 }
