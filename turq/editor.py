@@ -17,7 +17,6 @@ import falcon
 import werkzeug.formparser
 
 import turq.examples
-from turq.util.falcon import DisableCache
 from turq.util.http import guess_external_url
 
 
@@ -25,12 +24,12 @@ STATIC_PREFIX = '/static/'
 
 
 def make_server(host, port, ipv6, password, mock_server):
-    # This server is very volatile: who knows what will be listening on this
-    # host and port tomorrow? So, disable caching completely. We don't want
-    # e.g. Chrome to prompt to "Show saved copy" when Turq is not running, etc.
-    middleware = [DisableCache()]
     editor = falcon.API(media_type='text/plain; charset=utf-8',
-                        middleware=middleware)
+                        # This server is very volatile: who knows what will be
+                        # listening on this host and port tomorrow? So, disable
+                        # caching completely. We don't want Chrome to prompt
+                        # to "Show saved copy" when Turq is not running, etc.
+                        middleware=[DisableCache()])
     # Microsoft Edge doesn't send ``Authorization: Digest`` to ``/``.
     # Can be circumvented with ``/?``, but I think ``/editor`` is better.
     editor.add_route('/editor', EditorResource(mock_server, password))
@@ -170,3 +169,9 @@ def static_file(req, resp):
         raise falcon.HTTPNotFound()
     else:
         (resp.content_type, _) = mimetypes.guess_type(filename)
+
+
+class DisableCache:
+
+    def process_response(self, req, resp, resource, req_succeeded):
+        resp.cache_control = ['no-store']
