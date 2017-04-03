@@ -8,7 +8,7 @@ import socketserver
 
 import h11
 
-from turq.rules import RulesContext
+from turq.rules import RULES_FILENAME, RulesContext
 import turq.util.http
 from turq.util.logging import getNextLogger
 
@@ -25,7 +25,7 @@ class MockServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
         self.install_rules(initial_rules)
 
     def install_rules(self, rules):
-        self.compiled_rules = compile(rules, '<rules>', 'exec')
+        self.compiled_rules = compile(rules, RULES_FILENAME, 'exec')
         self.rules = rules
         logging.getLogger('turq').info('new rules installed')
 

@@ -11,6 +11,7 @@ import re
 import socket
 import ssl
 import time
+import traceback
 from urllib.parse import parse_qs, urlparse
 import wsgiref.headers
 
@@ -22,6 +23,9 @@ from turq.util.http import (KNOWN_METHODS, date, default_reason,
                             error_explanation, nice_header_name)
 from turq.util.logging import getNextLogger
 from turq.util.text import ellipsize, force_bytes, lorem_ipsum
+
+
+RULES_FILENAME = '<rules>'
 
 
 class RulesContext:
@@ -54,6 +58,12 @@ class RulesContext:
             exec(self._code, self._scope)        # pylint: disable=exec-used
         except SkipRemainingRules:
             pass
+        except Exception as exc:
+            self._log_rules_error(exc)
+            if self._handler.our_state is h11.SEND_RESPONSE:
+                # We can still replace the response with a 500.
+                self._response = Response()
+                self.error(500)
 
         # Depending on the rules, at this point the request body may or may not
         # have been received, and the response may or may not have been sent.
@@ -79,6 +89,15 @@ class RulesContext:
         for func in [lorem_ipsum, time.sleep]:
             scope[func.__name__] = func
         return scope
+
+    def _log_rules_error(self, exc):
+        # Extract the rules line number where the error happened.
+        [lineno, *_] = [lineno
+                        for (filename, lineno, _, _)
+                        in reversed(traceback.extract_tb(exc.__traceback__))
+                        if filename == RULES_FILENAME]
+        self._logger.error('error in rules, line %d: %s', lineno, exc)
+        self._logger.debug('details of this error:', exc_info=True)
 
     def _ensure_request_received(self):
         if self._handler.their_state is h11.SEND_BODY:

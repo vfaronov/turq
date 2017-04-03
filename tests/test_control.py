@@ -149,3 +149,20 @@ def test_new_rules_affect_existing_connection(turq_instance):
                      b'\r\n')
         while b'Hi there!' not in sock.recv(4096):
             pass
+
+
+def test_exception_in_rules(turq_instance):
+    with turq_instance:
+        turq_instance.request_editor('POST', '/editor',
+                                     data={'rules':
+                                               'def helper():\n'
+                                               '    html()\n'
+                                               '    oops()\n'
+                                               'debug()\n'
+                                               'helper()\n'
+                                               'gzip()\n'})
+        resp = turq_instance.request('GET', '/')
+        assert resp.status_code == 500
+    output = turq_instance.console_output
+    assert "error in rules, line 3: name 'oops' is not defined" in output
+    assert 'Traceback (most recent call last):' in output   # because `debug`
