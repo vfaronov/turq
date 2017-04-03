@@ -24,6 +24,7 @@ class TurqInstance:
         # Of course, ideally it should be a random free port instead.
         self.mock_port = 13095
         self.editor_port = 13096
+        self.password = ''
         self.extra_args = []
         self.wait = True
         self._process = None
@@ -32,7 +33,10 @@ class TurqInstance:
     def __enter__(self):
         args = [sys.executable, '-m', 'turq.main',
                 '--bind', self.host, '--mock-port', str(self.mock_port),
-                '--editor-port', str(self.editor_port)] + self.extra_args
+                '--editor-port', str(self.editor_port)]
+        if self.password is not None:
+            args += ['--editor-password', self.password]
+        args += self.extra_args
         self._process = subprocess.Popen(args, stdin=subprocess.DEVNULL,
                                          stdout=subprocess.DEVNULL,
                                          stderr=subprocess.PIPE)

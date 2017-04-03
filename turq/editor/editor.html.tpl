@@ -25,7 +25,7 @@
                 try <a href="$mock_url">$mock_url</a>
             </p>
             <!-- `target` necessary here to override the `base` -->
-            <form method=POST action=/ target=_self>
+            <form method=POST action=/editor target=_self>
                 <textarea name=rules cols=79 rows=15>$rules</textarea>
                 <p class=submit>
                     <input type=submit name=do value=Install accesskey=i>

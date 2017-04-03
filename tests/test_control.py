@@ -1,9 +1,11 @@
 # pylint: disable=invalid-name
 
+import re
 import time
 
 import pytest
 import requests
+from requests.auth import HTTPDigestAuth
 
 
 @pytest.mark.parametrize('extra_args', [[], ['--no-color']])
@@ -34,12 +36,12 @@ def test_verbose_output(turq_instance):
 
 def test_editor(turq_instance):
     with turq_instance:
-        resp = turq_instance.request_editor('GET', '/')
+        resp = turq_instance.request_editor('GET', '/editor')
         assert resp.headers['Cache-Control'] == 'no-store'
         assert 'port %d' % turq_instance.mock_port in resp.text
         assert '>error(404)\n</textarea>' in resp.text
         assert 'with html() as document:' in resp.text      # from examples
-        resp = turq_instance.request_editor('POST', '/',
+        resp = turq_instance.request_editor('POST', '/editor',
                                             data={'rules': 'html()'})
         assert '>html()</textarea>' in resp.text
         resp = turq_instance.request('GET', '/')
@@ -51,12 +53,12 @@ def test_editor(turq_instance):
 def test_no_editor(turq_instance):
     turq_instance.extra_args = ['--no-editor']
     with turq_instance, pytest.raises(requests.exceptions.ConnectionError):
-        turq_instance.request_editor('GET', '/')
+        turq_instance.request_editor('GET', '/editor')
 
 
 def test_editor_bad_syntax(turq_instance):
     with turq_instance:
-        resp = turq_instance.request_editor('POST', '/',
+        resp = turq_instance.request_editor('POST', '/editor',
                                             data={'rules': 'html('})
         assert resp.status_code == 422
         assert resp.headers['Content-Type'] == 'text/plain; charset=utf-8'
@@ -65,7 +67,8 @@ def test_editor_bad_syntax(turq_instance):
 
 def test_editor_bad_form(turq_instance):
     with turq_instance:
-        resp = turq_instance.request_editor('POST', '/', data={'foo': 'bar'})
+        resp = turq_instance.request_editor('POST', '/editor',
+                                            data={'foo': 'bar'})
         assert resp.status_code == 400
         assert resp.text == 'Bad form'
 
@@ -82,7 +85,7 @@ def test_editor_static(turq_instance):
 
 def test_debug_output(turq_instance):
     with turq_instance:
-        turq_instance.request_editor('POST', '/',
+        turq_instance.request_editor('POST', '/editor',
                                      data={'rules': 'debug(); html()'})
         turq_instance.request('GET', '/')
     assert '+ User-Agent: python-requests' in turq_instance.console_output
@@ -106,3 +109,26 @@ def test_uncaught_exception_traceback(turq_instance):
         time.sleep(1)
     assert 'Traceback (most recent call last):' in turq_instance.console_output
     assert 'turq: error: ' not in turq_instance.console_output
+
+
+def test_editor_password(turq_instance):
+    turq_instance.password = 'wololo'
+    with turq_instance:
+        resp = turq_instance.request_editor(
+            'POST', '/editor', data={'rules': 'html()'},
+            auth=HTTPDigestAuth('', 'foobar'))
+        assert resp.status_code == 401
+        assert 'Hello world!' not in turq_instance.request('GET', '/').text
+        resp = turq_instance.request_editor(
+            'POST', '/editor', data={'rules': 'html()'},
+            auth=HTTPDigestAuth('', 'wololo'))
+        assert resp.status_code == 200
+        assert 'Hello world!' in turq_instance.request('GET', '/').text
+
+
+def test_editor_password_auto_generated(turq_instance):
+    turq_instance.password = None
+    with turq_instance:
+        pass
+    assert re.search(r'editor password: [A-Za-z0-9]{24}$',
+                     turq_instance.console_output)

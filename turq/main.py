@@ -1,5 +1,7 @@
 import argparse
+import base64
 import logging
+import os
 import sys
 import threading
 
@@ -13,6 +15,8 @@ DEFAULT_ADDRESS = ''       # All interfaces
 DEFAULT_MOCK_PORT = 13085
 DEFAULT_EDITOR_PORT = 13086
 DEFAULT_RULES = 'error(404)\n'
+
+logger = logging.getLogger('turq')
 
 
 def main():
@@ -46,6 +50,10 @@ def parse_args(argv):
     parser.add_argument('-r', '--rules', metavar='PATH',
                         type=argparse.FileType('r'),
                         help='file with initial rules code')
+    parser.add_argument('-P', '--editor-password', metavar='PASSWORD',
+                        default=random_password(),
+                        help='explicitly set editor password '
+                             '(empty string to disable)')
     return parser.parse_args(argv[1:])
 
 
@@ -65,9 +73,8 @@ def setup_logging(args):
             field_styles=dict(coloredlogs.DEFAULT_FIELD_STYLES, asctime={}))
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
-    turq_root = logging.getLogger('turq')
-    turq_root.addHandler(handler)
-    turq_root.setLevel(logging.DEBUG if args.verbose else logging.INFO)
+    logger.addHandler(handler)
+    logger.setLevel(logging.DEBUG if args.verbose else logging.INFO)
 
 
 def run(args):
@@ -78,15 +85,18 @@ def run(args):
     if args.no_editor:
         editor_server = None
     else:
-        editor_server = turq.editor.make_server(args.bind, args.editor_port,
-                                                args.ipv6, mock_server)
+        editor_server = turq.editor.make_server(
+            args.bind, args.editor_port, args.ipv6,
+            args.editor_password, mock_server)
         threading.Thread(target=editor_server.serve_forever).start()
 
     # Show mock server info just before going into `serve_forever`,
     # to minimize the delay between printing it and actually listening
     show_server_info('mock', mock_server)
     if editor_server is not None:
-        show_server_info('editor', editor_server)
+        show_server_info('editor', editor_server, 'editor')
+        if args.editor_password:
+            logger.info('editor password: %s', args.editor_password)
 
     try:
         mock_server.serve_forever()
@@ -99,10 +109,14 @@ def run(args):
         editor_server.server_close()
 
 
-def show_server_info(label, server):
+def show_server_info(label, server, relative_url=''):
     (host, port, *_) = server.server_address
-    logging.getLogger('turq').info('%s on port %d - try %s',
-                                   label, port, guess_external_url(host, port))
+    logger.info('%s on port %d - try %s%s',
+                label, port, guess_external_url(host, port), relative_url)
+
+
+def random_password():
+    return base64.b64encode(os.urandom(18), altchars=b'Ab').decode()
 
 
 if __name__ == '__main__':
