@@ -27,11 +27,10 @@
             <!-- `target` necessary here to override the `base` -->
             <form method=POST action=/ target=_self>
                 <textarea name=rules cols=79 rows=15>$rules</textarea>
-                <div class=submit>
+                <p class=submit>
                     <input type=submit name=do value=Install accesskey=i>
-                    <input type=submit name=do value=Shutdown accesskey=s>
-                    <div class=status></div>
-                </div>
+                    <span class=status></span>
+                </p>
             </form>
         </main>
         <aside>

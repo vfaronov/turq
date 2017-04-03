@@ -18,17 +18,17 @@ function installCodeMirror() {
 
 
 function interceptForm() {
-    var button = document.querySelector('input[value=Install]');
-    button.addEventListener('click', function (e) {
+    document.forms[0].addEventListener('submit', function (e) {
         e.preventDefault();
         // Send more or less the same request that would be sent normally,
         // but via XHR.
         var req = new XMLHttpRequest();
         req.onreadystatechange = onReadyStateChange;
         codeMirror.save();
-        var data = new FormData(this.form);
-        data.append(this.name, this.value);
-        req.open(this.form.method, this.form.action);
+        var data = new FormData(this);
+        // https://blog.yorkxin.org/2014/02/06/ajax-with-formdata-is-broken-on-ie10-ie11
+        data.append('workaround', 'IE');
+        req.open(this.method, this.action);
         req.timeout = 5000;
         req.send(data);
         codeMirror.focus();         // no need to keep focus on the button

@@ -78,26 +78,15 @@ pre {
     margin-right: 0;
 }
 
-div.submit {
-    margin-top: 1em;
-    display: flex;
-    justify-content: space-between;
-}
-
-input[value=Install] {
-    order: 1;
+p.submit {
+    vertical-align: center;
 }
 
 .status {
-    order: 2;
-    text-align: center;
+    padding-left: 1em;
 }
 
 .status.error {
     color: #720000;
     font-weight: bold;
-}
-
-input[value=Shutdown] {
-    order: 3;
 }

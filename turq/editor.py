@@ -1,13 +1,11 @@
 # pylint: disable=unused-argument
 
 import html
-import logging
 import mimetypes
 import pkgutil
 import socket
 import socketserver
 import string
-import threading
 import urllib.parse
 import wsgiref.simple_server
 
@@ -86,28 +84,10 @@ class RootResource:
         # Need `werkzeug.formparser` because JavaScript sends ``FormData``,
         # which is encoded as multipart.
         (_, form, _) = werkzeug.formparser.parse_form_data(req.env)
-        if form.get('do') == 'Shutdown':
-            self.do_shutdown(resp)
-        elif 'rules' in form:
-            self.do_install(form['rules'], resp)
-        else:
+        if 'rules' not in form:
             raise falcon.HTTPBadRequest('Bad form')
-
-    def do_shutdown(self, resp):
-        resp.status = falcon.HTTP_202   # Accepted
-        resp.body = 'Turq will now shut down.'
-        logging.getLogger('turq').info('shutting down per user request')
-        # Shutting down the mock server will cause `serve_forever` to return
-        # on the main thread, which will proceed to shut down the editor server
-        # and terminate, at which point the thread serving this request will
-        # die because it's a daemon thread. This is a race that could prevent
-        # the response from being delivered to the client. But I think it is
-        # narrow enough in practice.
-        threading.Thread(target=self.mock_server.shutdown).start()
-
-    def do_install(self, rules, resp):
         try:
-            self.mock_server.install_rules(rules)
+            self.mock_server.install_rules(form['rules'])
         except SyntaxError as exc:
             resp.status = falcon.HTTP_422   # Unprocessable Entity
             resp.body = str(exc)
