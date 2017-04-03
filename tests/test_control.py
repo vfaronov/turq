@@ -191,3 +191,16 @@ def test_no_premature_connection_close(turq_instance):
         time.sleep(1)
         sock.sendall(b'Hello world!\r\n')
         assert b'HTTP/1.1 400 Bad Request' in sock.recv(4096)
+
+
+@pytest.mark.parametrize('bad_path', [
+    br'../../../../../../../../../../../../../etc/services',
+    br'..\..\..\..\..\..\..\..\..\..\..\..\..\pagefile.sys'])
+def test_editor_no_path_traversal(turq_instance, bad_path):
+    with turq_instance:
+        sock = socket.create_connection((turq_instance.host,
+                                         turq_instance.editor_port))
+        sock.sendall(b'GET /static/' + bad_path + b' HTTP/1.1\r\n'
+                     b'Host: example\r\n'
+                     b'\r\n')
+        assert b'HTTP/1.0 404 Not Found\r\n' in sock.recv(4096)
