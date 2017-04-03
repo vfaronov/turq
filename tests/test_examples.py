@@ -405,4 +405,4 @@ def test_redirection_2(example):
 def test_inspecting_requests_1(example):
     resp = example.request('GET', '/')
     resp.raise_for_status()
-    # The actual logging will be checked somewhere else.
+    # The actual logging is checked in `test_control.test_debug_output`.

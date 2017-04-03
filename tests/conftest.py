@@ -18,28 +18,32 @@ class TurqInstance:
     """Spins up and controls a live instance of Turq for testing."""
 
     def __init__(self):
-        self.mock_host = 'localhost'
+        self.host = 'localhost'
         # Test instance listens on port 13095 instead of the default 13085,
         # to make it easier to run tests while also testing Turq manually.
         # Of course, ideally it should be a random free port instead.
         self.mock_port = 13095
         self.editor_port = 13096
         self.extra_args = []
+        self.wait = True
         self._process = None
+        self.console_output = None
 
     def __enter__(self):
         args = [sys.executable, '-m', 'turq.main',
-                '--bind', self.mock_host, '--mock-port', str(self.mock_port),
+                '--bind', self.host, '--mock-port', str(self.mock_port),
                 '--editor-port', str(self.editor_port)] + self.extra_args
         self._process = subprocess.Popen(args, stdin=subprocess.DEVNULL,
                                          stdout=subprocess.DEVNULL,
-                                         stderr=subprocess.DEVNULL)
-        self._wait_for_server()
+                                         stderr=subprocess.PIPE)
+        if self.wait:
+            self._wait_for_server()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         self._process.terminate()
         self._process.wait()
+        self.console_output = self._process.stderr.read().decode()
         return False
 
     def _wait_for_server(self, timeout=3):
@@ -56,8 +60,7 @@ class TurqInstance:
         raise RuntimeError('Turq failed to start')
 
     def connect(self):
-        return socket.create_connection((self.mock_host, self.mock_port),
-                                        timeout=5)
+        return socket.create_connection((self.host, self.mock_port), timeout=5)
 
     def send(self, *events):
         hconn = h11.Connection(our_role=h11.CLIENT)
@@ -73,5 +76,9 @@ class TurqInstance:
                     yield event
 
     def request(self, method, url, **kwargs):
-        full_url = 'http://%s:%d%s' % (self.mock_host, self.mock_port, url)
+        full_url = 'http://%s:%d%s' % (self.host, self.mock_port, url)
+        return requests.request(method, full_url, **kwargs)
+
+    def request_editor(self, method, url, **kwargs):
+        full_url = 'http://%s:%d%s' % (self.host, self.editor_port, url)
         return requests.request(method, full_url, **kwargs)
