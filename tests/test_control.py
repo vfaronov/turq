@@ -1,6 +1,7 @@
 # pylint: disable=invalid-name
 
 import re
+import socket
 import time
 
 import pytest
@@ -166,3 +167,27 @@ def test_exception_in_rules(turq_instance):
     output = turq_instance.console_output
     assert "error in rules, line 3: name 'oops' is not defined" in output
     assert 'Traceback (most recent call last):' in output   # because `debug`
+
+
+def test_abruptly_closed_request(turq_instance):
+    with turq_instance, turq_instance.connect() as sock:
+        sock.sendall(b'POST / HTTP/1.1\r\n'
+                     b'Host: example\r\n'
+                     b'Content-Length: 9001\r\n'
+                     b'\r\n')
+        sock.shutdown(socket.SHUT_WR)
+        assert b'HTTP/1.1 400 Bad Request' in sock.recv(4096)
+    assert 'error:' in turq_instance.console_output
+
+
+def test_no_premature_connection_close(turq_instance):
+    with turq_instance, turq_instance.connect() as sock:
+        sock.sendall(b'POST / HTTP/1.1\r\n'
+                     b'Content-Length: 14\r\n'
+                     b'\r\n')
+        # Already at this point, the server will have sent a 400 (Bad Request),
+        # because the ``Host`` header is missing. But we're a slow client;
+        # we keep writing to the server.
+        time.sleep(1)
+        sock.sendall(b'Hello world!\r\n')
+        assert b'HTTP/1.1 400 Bad Request' in sock.recv(4096)
