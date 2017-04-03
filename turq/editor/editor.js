@@ -11,7 +11,10 @@ function installCodeMirror() {
     var textArea = document.querySelector('form textarea');
     codeMirror = CodeMirror.fromTextArea(textArea, {
         lineNumbers: true,
-        indentUnit: 4
+        indentUnit: 4,
+        extraKeys: {
+            Tab: 'insertSoftTab'    // insert spaces when Tab is pressed
+        }
     });
     CodeMirror.colorize(document.querySelectorAll('aside pre'), 'python');
 }
