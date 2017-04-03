@@ -6,11 +6,11 @@ import html
 import mimetypes
 import os
 import pkgutil
+import posixpath
 import socket
 import socketserver
 import string
 import threading
-import urllib.parse
 import wsgiref.simple_server
 
 import falcon
@@ -161,14 +161,14 @@ class RedirectResource:
 
 
 def static_file(req, resp):
-    path = urllib.parse.urljoin('/', req.path)      # Avoid path traversal
-    filename = path[len(STATIC_PREFIX):]
+    path = '/' + req.path[len(STATIC_PREFIX):]
+    path = posixpath.normpath(path)           # Avoid path traversal
     try:
-        resp.data = pkgutil.get_data('turq', 'editor/%s' % filename)
+        resp.data = pkgutil.get_data('turq', 'editor%s' % path)
     except FileNotFoundError:
         raise falcon.HTTPNotFound()
     else:
-        (resp.content_type, _) = mimetypes.guess_type(filename)
+        (resp.content_type, _) = mimetypes.guess_type(path)
 
 
 class DisableCache:
