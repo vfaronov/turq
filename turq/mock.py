@@ -43,9 +43,11 @@ class MockHandler(socketserver.StreamRequestHandler):
         try:
             while True:
                 # pylint: disable=protected-access
-                # `RulesContext` takes care of handling one complete
-                # request/response cycle, including reading the request.
-                RulesContext(self.server.compiled_rules, self)._run()
+                event = self.receive_event()
+                if isinstance(event, h11.Request):     # not `ConnectionClosed`
+                    # `RulesContext` takes care of handling one complete
+                    # request/response cycle.
+                    RulesContext(self.server.compiled_rules, self)._run(event)
                 self._logger.debug('states: %r', self._hconn.states)
                 if self._hconn.states == {h11.CLIENT: h11.DONE,
                                           h11.SERVER: h11.DONE}:

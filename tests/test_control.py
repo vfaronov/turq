@@ -132,3 +132,20 @@ def test_editor_password_auto_generated(turq_instance):
         pass
     assert re.search(r'editor password: [A-Za-z0-9]{24}$',
                      turq_instance.console_output)
+
+
+def test_new_rules_affect_existing_connection(turq_instance):
+    with turq_instance, turq_instance.connect() as sock:
+        sock.sendall(b'GET / HTTP/1.1\r\n'
+                     b'Host: example\r\n'
+                     b'\r\n')
+        while b'Error! Nothing matches the given URI' not in sock.recv(4096):
+            pass
+        # Connection to mock server is kept open. Meanwhile, we post new rules.
+        turq_instance.request_editor('POST', '/editor',
+                                     data={'rules': 'text("Hi there!")'})
+        sock.sendall(b'GET / HTTP/1.1\r\n'
+                     b'Host: example\r\n'
+                     b'\r\n')
+        while b'Hi there!' not in sock.recv(4096):
+            pass

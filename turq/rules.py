@@ -39,15 +39,9 @@ class RulesContext:
     def __init__(self, code, handler):
         self._code = code
         self._handler = handler
-
-    def _run(self):
-        event = self._handler.receive_event()
-        if isinstance(event, h11.ConnectionClosed):
-            return
-        assert isinstance(event, h11.Request)
-        # Initialize the logger here so we don't increment the counter
-        # on `ConnectionClosed` events.
         self._logger = getNextLogger('turq.request')
+
+    def _run(self, event):
         self.request = Request(
             self, event.method.decode(), event.target.decode(),
             event.http_version.decode(), _decode_headers(event.headers),
