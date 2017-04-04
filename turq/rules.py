@@ -289,6 +289,8 @@ class RulesContext:
                         headers.get('Access-Control-Request-Headers', ''))
             self.body('')
             raise SkipRemainingRules()
+        else:
+            self.add_header('Vary', 'Origin')
 
     def basic_auth(self):
         self._require_auth('Basic', 'realm="Turq"')
