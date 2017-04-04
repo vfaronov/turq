@@ -65,6 +65,6 @@ In any Python 3.4+ environment::
 Thanks
 ------
 
-`BrowserStack`_ have kindly provided a free subscription for testing HTTPolice.
+`BrowserStack`_ have kindly provided a free subscription for testing Turq.
 
 .. _BrowserStack: https://www.browserstack.com/
