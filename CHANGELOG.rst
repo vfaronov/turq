@@ -1,8 +1,8 @@
 History of changes
 ==================
 
-Unreleased
-----------
+0.3.0 - 2017-04-04
+------------------
 
 - Complete rewrite. Only the most notable changes are listed below.
 
