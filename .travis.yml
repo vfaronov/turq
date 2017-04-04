@@ -18,8 +18,14 @@ script:
     - python setup.py check --strict --restructuredtext
     - pytest
 
+    # Current releases of Pylint and astroid don't work well on Python 3.6.
+    - [ "$TRAVIS_PYTHON_VERSION" != "3.6" ] && pylint turq setup.py tests/*.py
+
     # Check that the docs are building without warnings.
     - sphinx-build -W docs/ docs/_build/
+
+    # Check syntax of assorted reStructuredText documents.
+    - cat *.rst | rst2html.py --halt=warning >/dev/null
 
     # Check that the source distribution includes the right files.
     - check-manifest
