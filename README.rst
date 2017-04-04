@@ -48,20 +48,23 @@ Built-in editor
 
 You don't even need to create any files, just use the built-in Web editor:
 
-(screenshot here)
+.. image:: screenshot.png
 
 
 Get it now
 ----------
 
-Grab the `pre-built binaries`_. Or, run this in any Python 3.4+ environment::
+In any Python 3.4+ environment::
 
     $ pip3 install turq
+    $ turq
 
-.. _pre-built binaries: https://github.com/vfaronov/turq/releases
+`Read the docs <http://turq.readthedocs.io/en/stable/>`_ for more.
 
 
-Read the docs
--------------
+Thanks
+------
 
-`turq.readthedocs.io <http://turq.readthedocs.io/en/stable/>`_
+`BrowserStack`_ have kindly provided a free subscription for testing HTTPolice.
+
+.. _BrowserStack: https://www.browserstack.com/
