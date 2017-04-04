@@ -64,12 +64,12 @@ def excepthook(_type, exc, _traceback):
 def setup_logging(args):
     if args.no_color:
         formatter = logging.Formatter(
-            fmt='%(asctime)-8s %(name)-19s %(message)s',
+            fmt='%(asctime)s  %(name)s  %(message)s',
             datefmt='%H:%M:%S')
     else:
         formatter = colorlog.ColoredFormatter(
-            fmt=('%(asctime)-8s '
-                 '%(name_log_color)s%(name)-19s%(reset)s '
+            fmt=('%(asctime)s  '
+                 '%(name_log_color)s%(name)s%(reset)s  '
                  '%(log_color)s%(message)s%(reset)s'),
             datefmt='%H:%M:%S',
             log_colors={'DEBUG': 'green', 'ERROR': 'red', 'CRITICAL': 'red'},

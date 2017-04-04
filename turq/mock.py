@@ -102,7 +102,7 @@ class MockHandler(socketserver.StreamRequestHandler):
             self.send_event(h11.Data(data=('Error: %s\r\n' % exc).encode()))
             self.send_event(h11.EndOfMessage())
         except Exception as e:
-            self._logger.error('cannot send error response: %s', e)
+            self._logger.debug('cannot send error response: %s', e)
 
         # A crude way to avoid the TCP reset problem (RFC 7230 Section 6.6).
         try:
