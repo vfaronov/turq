@@ -5,7 +5,7 @@ import os
 import sys
 import threading
 
-import coloredlogs
+import colorlog
 
 import turq.editor
 import turq.mock
@@ -62,15 +62,23 @@ def excepthook(_type, exc, _traceback):
 
 
 def setup_logging(args):
-    fmt = '%(asctime)-8s %(name)-19s %(message)s'
-    datefmt = '%H:%M:%S'
     if args.no_color:
-        formatter = logging.Formatter(fmt, datefmt)
+        formatter = logging.Formatter(
+            fmt='%(asctime)-8s %(name)-19s %(message)s',
+            datefmt='%H:%M:%S')
     else:
-        formatter = coloredlogs.ColoredFormatter(
-            fmt, datefmt,
-            # I don't like how it paints the time green by default.
-            field_styles=dict(coloredlogs.DEFAULT_FIELD_STYLES, asctime={}))
+        formatter = colorlog.ColoredFormatter(
+            fmt=('%(asctime)-8s '
+                 '%(name_log_color)s%(name)-19s%(reset)s '
+                 '%(log_color)s%(message)s%(reset)s'),
+            datefmt='%H:%M:%S',
+            log_colors={'DEBUG': 'green', 'ERROR': 'red', 'CRITICAL': 'red'},
+            secondary_log_colors={
+                'name': {'DEBUG': 'cyan', 'INFO': 'cyan',
+                         'WARNING': 'cyan', 'ERROR': 'cyan',
+                         'CRITICAL': 'cyan'},
+            },
+        )
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
     logger.addHandler(handler)

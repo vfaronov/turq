@@ -131,7 +131,7 @@ def test_editor_password_auto_generated(turq_instance):
     turq_instance.password = None
     with turq_instance:
         pass
-    assert re.search(r'editor password: [A-Za-z0-9]{24}$',
+    assert re.search(r'editor password: [A-Za-z0-9]{24}\b',
                      turq_instance.console_output)
 
 

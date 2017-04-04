@@ -32,8 +32,13 @@ setup(
         'dominate >= 2.3.1',
         'Werkzeug >= 0.12.1',
         'docutils >= 0.13.1',
-        'coloredlogs >= 6.0',
+        'colorlog >= 2.10.0',
     ],
+    extras_require={
+        ':sys_platform == "win32"': [
+            'colorama >= 0.3.7',            # for colorlog
+        ],
+    },
     classifiers=[
         'Intended Audience :: Developers',
         'License :: OSI Approved :: ISC License (ISCL)',
