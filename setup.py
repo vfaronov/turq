@@ -19,9 +19,9 @@ setup(
     author='Vasiliy Faronov',
     author_email='vfaronov@gmail.com',
     license='ISC',
-    packages=['turq'],
-    # Do not care about the ugliness of these globs because
-    # any discrepancies will be caught by check-manifest.
+    # Do not care about the ugliness of hardcoding all these globs
+    # because any discrepancies will be caught by check-manifest.
+    packages=['turq', 'turq.util'],
     package_data={'turq': ['editor/*',
                            'editor/codemirror/*/*', 'editor/codemirror/*/*/*',
                            'examples.rst']},

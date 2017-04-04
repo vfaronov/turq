@@ -1,0 +1,34 @@
+language: python
+dist: trusty
+sudo: false
+
+python:
+    - "3.4"
+    - "3.5"
+    - "3.6"
+
+install:
+    - pip install -e .
+    - pip install -r tools/requirements.txt
+
+cache: pip
+
+script:
+    # Basic stuff.
+    - python setup.py check --strict --restructuredtext
+    - pytest
+
+    # Check that the docs are building without warnings.
+    - sphinx-build -W doc/ doc/_build/
+
+    # Check that the source distribution includes the right files.
+    - check-manifest
+
+deploy:
+    on:
+        tags: true
+        python: "3.5"
+    provider: pypi
+    user: vfaronov
+    distributions: "sdist bdist_wheel"
+    skip_upload_docs: true

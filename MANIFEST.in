@@ -1,0 +1,20 @@
+include setup.cfg
+
+include README.rst
+include screenshot.png
+include LICENSE
+include turq/editor/codemirror/LICENSE
+include CHANGELOG.rst
+
+include pylintrc
+
+# Even though Travis only works on a Git repo,
+# this file is important as a reference on the build procedure.
+include .travis.yml
+
+graft tests
+graft docs
+prune docs/_build
+graft tools
+
+global-exclude *.pyc
