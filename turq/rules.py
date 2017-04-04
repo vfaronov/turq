@@ -262,7 +262,7 @@ class RulesContext:
 
     @contextlib.contextmanager
     def _edit_html(self):
-        document = dominate.document()
+        document = dominate.document(title='Hello world')
         with document:
             yield document
         self.header('Content-Type', 'text/html; charset=utf-8')

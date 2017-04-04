@@ -90,3 +90,7 @@ p.submit {
     color: #720000;
     font-weight: bold;
 }
+
+.try {
+    white-space: nowrap;
+}

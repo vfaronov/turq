@@ -104,7 +104,8 @@ def run(args):
     if editor_server is not None:
         show_server_info('editor', editor_server, 'editor')
         if args.editor_password:
-            logger.info('editor password: %s', args.editor_password)
+            logger.info('editor password: %s (any username)',
+                        args.editor_password)
 
     try:
         mock_server.serve_forever()

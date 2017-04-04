@@ -8,7 +8,7 @@ var codeMirror = null;
 
 
 function installCodeMirror() {
-    var textArea = document.querySelector('form textarea');
+    var textArea = document.querySelector('textarea');
     codeMirror = CodeMirror.fromTextArea(textArea, {
         lineNumbers: true,
         indentUnit: 4,
@@ -23,8 +23,8 @@ function installCodeMirror() {
 function interceptForm() {
     document.forms[0].addEventListener('submit', function (e) {
         e.preventDefault();
-        // Send more or less the same request that would be sent normally,
-        // but via XHR.
+        hideStatus();
+        // Send more or less the same data, but via XHR.
         var req = new XMLHttpRequest();
         req.onreadystatechange = onReadyStateChange;
         codeMirror.save();
@@ -34,7 +34,7 @@ function interceptForm() {
         req.open(this.method, this.action);
         req.timeout = 5000;
         req.send(data);
-        codeMirror.focus();         // no need to keep focus on the button
+        codeMirror.focus();
     });
 }
 
@@ -43,9 +43,13 @@ function onReadyStateChange() {
     if (this.readyState !== 4) return;       // not DONE yet
     var text;
     var type = (this.getResponseHeader('Content-Type') || '').toLowerCase();
-    if (type.indexOf('text/plain') === 0) text = this.responseText;
-    else if (this.status) text = this.statusText;
-    else text = 'Connection error';
+    if (type.indexOf('text/plain') === 0) {
+        text = this.responseText;
+    } else if (this.status) {
+        text = this.statusText;
+    } else {
+        text = 'Connection error';
+    }
     var isError = !this.status || (this.status >= 400);
     displayStatus(text, isError);
 }
@@ -55,22 +59,29 @@ var timeoutId = null;
 
 
 function displayStatus(text, isError) {
-    if (timeoutId !== null) window.clearTimeout(timeoutId);
-    var status = document.querySelector('form .status');
+    if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+    }
+    var status = document.querySelector('.status');
     status.textContent = text;
     if (isError) {
         status.classList.add('error');
     } else {
         status.classList.remove('error');
-        // Hide after a short delay.
-        timeoutId = window.setTimeout(function () { status.textContent = ''; },
-                                      1000);
+        // An "okay" message is safe to hide after a short delay.
+        timeoutId = window.setTimeout(hideStatus, 1000);
     }
 }
 
 
+function hideStatus() {
+    document.querySelector('.status').textContent = '';
+    timeoutId = null;
+}
+
+
 document.addEventListener('DOMContentLoaded', function() {
-    document.querySelector('form textarea').focus();
+    document.querySelector('textarea').focus();
     installCodeMirror();
     interceptForm();
 });

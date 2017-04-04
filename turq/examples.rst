@@ -228,7 +228,7 @@ By default, if the client supports it, Turq uses ``Transfer-Encoding: chunked``
 and keeps the connection alive.
 
 To use ``Content-Length`` instead of ``Transfer-Encoding``,
-call ``content_length()`` after you've set the body::
+call ``content_length()`` after you’ve set the body::
 
     text('Hello world!\r\n')
     content_length()

@@ -3,7 +3,7 @@
 <html lang=en>
 
     <head>
-        <title>Turq</title>
+        <title>Turq editor</title>
         <meta charset=utf-8>
         <!-- Examples are rendered by docutils, and we cannot change
              link targets in there, so use a `base`. -->
@@ -19,10 +19,10 @@
 
     <body>
         <main>
-            <h1>Turq</h1>
+            <h1>Turq editor</h1>
             <p>
                 Mock server is listening on $mock_host port $mock_port —
-                try <a href="$mock_url">$mock_url</a>
+                <span class=try>try <a href="$mock_url">$mock_url</a></span>
             </p>
             <!-- `target` necessary here to override the `base` -->
             <form method=POST action=/editor target=_self>
