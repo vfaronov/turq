@@ -19,7 +19,7 @@ script:
     - pytest
 
     # Check that the docs are building without warnings.
-    - sphinx-build -W doc/ doc/_build/
+    - sphinx-build -W docs/ docs/_build/
 
     # Check that the source distribution includes the right files.
     - check-manifest
@@ -30,5 +30,7 @@ deploy:
         python: "3.5"
     provider: pypi
     user: vfaronov
+    password:
+        secure: "qFwPZVGOGXIN/CT1/3zftJ4yRzAw1WMsUGYDP8tuLx5XuNYvB4iZe81fcM2ln0DUC3MkNwlPzXJ92b0jlIJrJUchmaQNFwk8j5/Rl6ylOfxK2OWEvMJ9lob+ebqWERsosQf0quOlAKeYK+fxYSQ2b5MkYF3ATgxB3ND7RjQxmqbOQ+0iqfnPzIVGeMFDiIW2EWmIf8v5nJkeU+Yi+G2YWx71L6i1A9He9Ne4mKtoAZS8wTO6gzDJw56Ho6AmpBYBnLcCgtJHHrHIG9pxPG4jZrVvV8PHwjFynlbb8VdiADAPw3zFqgEz8wSh52ZybJM++75Bix5QYk2u3Ze873O6sHSlDS1cwcZEueetuCsroM/zYdMADuhnBt2WGy5VBAxh5W2QFuPedCvV1LV86PII9wAsPNm7f6sZfj0VvIjrFAbIo1Wt39aFLeogPfvmKpurUzt9+sh9u9zPkqyfbvuY5rdSeopttKqHu80M6FNcVk/4Hq6Uu0pgH0dGBS7/QiJFZPYAgxfrkNrQBI9kCyhJQCmOqgUzjfpvE2E51foO+CzRndGVYAeIRr3QLdofjqzW79HZAIAIarwJOwdTdHp+9XRP0VBk7ouTHIuXK+oxAGV1JJuwQCa0H1Rt3/Zswq/IEseP2VnZYoHrshVbCN/s9feBBYGjEweeWN9dNTrHQkc="
     distributions: "sdist bdist_wheel"
     skip_upload_docs: true
