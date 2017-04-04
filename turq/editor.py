@@ -162,7 +162,7 @@ class RedirectResource:
 
 def static_file(req, resp):
     path = '/' + req.path[len(STATIC_PREFIX):]
-    path = posixpath.normpath(path)           # Avoid path traversal
+    path = posixpath.normpath(path.replace('\\', '/'))   # Avoid path traversal
     try:
         resp.data = pkgutil.get_data('turq', 'editor%s' % path)
     except FileNotFoundError:
