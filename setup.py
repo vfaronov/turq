@@ -19,12 +19,18 @@ setup(
     author='Vasiliy Faronov',
     author_email='vfaronov@gmail.com',
     license='ISC',
-    # Do not care about the ugliness of hardcoding all these globs
+    # Do not care about the ugliness of hardcoding all these names
     # because any discrepancies will be caught by check-manifest.
     packages=['turq', 'turq.util'],
-    package_data={'turq': ['editor/*',
-                           'editor/codemirror/*/*', 'editor/codemirror/*/*/*',
-                           'examples.rst']},
+    package_data={
+        'turq': [
+            'editor/*.tpl', 'editor/*.css', 'editor/*.js',
+            'editor/codemirror/lib/*.css', 'editor/codemirror/lib/*.js',
+            'editor/codemirror/mode/python/*.js',
+            'editor/codemirror/addon/runmode/*.js',
+            'examples.rst',
+        ],
+    },
     entry_points={'console_scripts': ['turq=turq.main:main']},
     install_requires=[
         'h11 >= 0.7.0',
