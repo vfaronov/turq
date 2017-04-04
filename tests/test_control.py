@@ -39,6 +39,7 @@ def test_editor(turq_instance):
     with turq_instance:
         resp = turq_instance.request_editor('GET', '/editor')
         assert resp.headers['Cache-Control'] == 'no-store'
+        assert resp.headers['X-UA-Compatible'] == 'IE=edge'
         assert 'port %d' % turq_instance.mock_port in resp.text
         assert '>error(404)\n</textarea>' in resp.text
         assert 'with html() as document:' in resp.text      # from examples

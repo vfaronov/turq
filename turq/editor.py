@@ -25,11 +25,7 @@ STATIC_PREFIX = '/static/'
 
 def make_server(host, port, ipv6, password, mock_server):
     editor = falcon.API(media_type='text/plain; charset=utf-8',
-                        # This server is very volatile: who knows what will be
-                        # listening on this host and port tomorrow? So, disable
-                        # caching completely. We don't want Chrome to prompt
-                        # to "Show saved copy" when Turq is not running, etc.
-                        middleware=[DisableCache()])
+                        middleware=[CommonHeaders()])
     # Microsoft Edge doesn't send ``Authorization: Digest`` to ``/``.
     # Can be circumvented with ``/?``, but I think ``/editor`` is better.
     editor.add_route('/editor', EditorResource(mock_server, password))
@@ -171,7 +167,14 @@ def static_file(req, resp):
         (resp.content_type, _) = mimetypes.guess_type(path)
 
 
-class DisableCache:
+class CommonHeaders:
 
     def process_response(self, req, resp, resource, req_succeeded):
+        # This server is very volatile: who knows what will be listening
+        # on this host and port tomorrow? So, disable caching completely.
+        # We don't want Chrome to "Show saved copy" when Turq is down, etc.
         resp.cache_control = ['no-store']
+
+        # For some reason, under some circumstances, Internet Explorer 11
+        # falls back to IE 7 compatibility mode on the Turq editor.
+        resp.append_header('X-UA-Compatible', 'IE=edge')
