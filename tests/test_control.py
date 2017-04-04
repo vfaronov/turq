@@ -54,7 +54,9 @@ def test_editor(turq_instance):
 
 def test_no_editor(turq_instance):
     turq_instance.extra_args = ['--no-editor']
+    turq_instance.wait = False
     with turq_instance, pytest.raises(requests.exceptions.ConnectionError):
+        time.sleep(1)
         turq_instance.request_editor('GET', '/editor')
 
 
@@ -131,7 +133,7 @@ def test_editor_password(turq_instance):
 def test_editor_password_auto_generated(turq_instance):
     turq_instance.password = None
     with turq_instance:
-        pass
+        time.sleep(1)
     assert re.search(r'editor password: [A-Za-z0-9]{24}\b',
                      turq_instance.console_output)
 
@@ -198,9 +200,7 @@ def test_no_premature_connection_close(turq_instance):
     br'../../../../../../../../../../../../../etc/services',
     br'..\..\..\..\..\..\..\..\..\..\..\..\..\pagefile.sys'])
 def test_editor_no_path_traversal(turq_instance, bad_path):
-    with turq_instance:
-        sock = socket.create_connection((turq_instance.host,
-                                         turq_instance.editor_port))
+    with turq_instance, turq_instance.connect_editor() as sock:
         sock.sendall(b'GET /static/' + bad_path + b' HTTP/1.1\r\n'
                      b'Host: example\r\n'
                      b'\r\n')

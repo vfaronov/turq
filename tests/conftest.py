@@ -58,6 +58,7 @@ class TurqInstance:
             time.sleep(0.1)
             try:
                 self.connect().close()
+                self.connect_editor().close()
                 return
             except OSError:
                 pass
@@ -65,6 +66,10 @@ class TurqInstance:
 
     def connect(self):
         return socket.create_connection((self.host, self.mock_port), timeout=5)
+
+    def connect_editor(self):
+        return socket.create_connection((self.host, self.editor_port),
+                                        timeout=5)
 
     def send(self, *events):
         hconn = h11.Connection(our_role=h11.CLIENT)
