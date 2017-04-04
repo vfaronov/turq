@@ -102,7 +102,7 @@ def run(args):
     # to minimize the delay between printing it and actually listening
     show_server_info('mock', mock_server)
     if editor_server is not None:
-        show_server_info('editor', editor_server, 'editor')
+        show_server_info('editor', editor_server)
         if args.editor_password:
             logger.info('editor password: %s (any username)',
                         args.editor_password)
@@ -118,10 +118,10 @@ def run(args):
         editor_server.server_close()
 
 
-def show_server_info(label, server, relative_url=''):
+def show_server_info(label, server):
     (host, port, *_) = server.server_address
-    logger.info('%s on port %d - try %s%s',
-                label, port, guess_external_url(host, port), relative_url)
+    logger.info('%s on port %d - try %s',
+                label, port, guess_external_url(host, port))
 
 
 def random_password():
