@@ -1,5 +1,7 @@
 from datetime import datetime
 import http.server
+from ipaddress import IPv6Address
+import re
 import socket
 
 import werkzeug.http
@@ -14,6 +16,12 @@ KNOWN_METHODS = ['ACL', 'BASELINE-CONTROL', 'BIND', 'CHECKIN', 'CHECKOUT',
                  'PUT', 'REBIND', 'REPORT', 'SEARCH', 'TRACE', 'UNBIND',
                  'UNCHECKOUT', 'UNLINK', 'UNLOCK', 'UPDATE',
                  'UPDATEREDIRECTREF', 'VERSION-CONTROL']
+
+
+IPV4_REVERSE_DNS = re.compile(r'^' + r'([0-9]+)\.' * 4 + r'in-addr\.arpa\.?$',
+                              flags=re.IGNORECASE)
+IPV6_REVERSE_DNS = re.compile(r'^' + r'([0-9a-f])\.' * 32 + r'ip6\.arpa\.?$',
+                              flags=re.IGNORECASE)
 
 
 def default_reason(status_code):
@@ -45,11 +53,27 @@ def guess_external_url(local_host, port):
     point of view, so they can't access `local_host` from a Web browser just
     by typing ``http://localhost:12345/``.
     """
-    if local_host in ['0.0.0.0', '::']:         # Listening on all interfaces
+    if local_host in ['0.0.0.0', '::']:
+        # The server is listening on all interfaces, but we have to pick one.
+        # The system's FQDN should give us a hint.
         local_host = socket.getfqdn()
+
         # https://github.com/vfaronov/turq/issues/9
-        if local_host.lower().rstrip('.').endswith('.arpa'):
-            local_host = 'localhost'          # Welp, not much we can do here.
-    if ':' in local_host:     # IPv6 literal
-        local_host = '[%s]' % local_host
+        match = IPV4_REVERSE_DNS.match(local_host)
+        if match:
+            local_host = '.'.join(reversed(match.groups()))
+        else:
+            match = IPV6_REVERSE_DNS.match(local_host)
+            if match:
+                address_as_int = int(''.join(reversed(match.groups())), 16)
+                local_host = str(IPv6Address(address_as_int))
+
+    if ':' in local_host:
+        # Looks like an IPv6 literal. Has to be wrapped in brackets in a URL.
+        # Also, an IPv6 address can have a zone ID tacked on the end,
+        # like "%3". RFC 6874 allows encoding them in URLs as well,
+        # but in my experiments on Windows 8.1, I had more success
+        # removing the zone ID altogether. After all this is just a guess.
+        local_host = '[%s]' % local_host.rsplit('%', 1)[0]
+
     return 'http://%s:%d/' % (local_host, port)
