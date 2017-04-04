@@ -19,7 +19,7 @@ script:
     - pytest
 
     # Current releases of Pylint and astroid don't work well on Python 3.6.
-    - test "$TRAVIS_PYTHON_VERSION" != 3.6 && pylint turq *.py tests/*.py
+    - test "$TRAVIS_PYTHON_VERSION" = 3.6 || pylint turq *.py tests/*.py
 
     # Check that the docs are building without warnings.
     - sphinx-build -W docs/ docs/_build/
