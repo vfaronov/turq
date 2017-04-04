@@ -46,7 +46,8 @@ def parse_args(argv):
                         help='port for the rules editor to listen on')
     parser.add_argument('-6', '--ipv6', action='store_true',
                         default=False,
-                        help='listen on IPv6 instead of IPv4')
+                        help=('listen on IPv6 instead of IPv4 '
+                              '(or on both, depending on the system)'))
     parser.add_argument('-r', '--rules', metavar='PATH',
                         type=argparse.FileType('r'),
                         help='file with initial rules code')

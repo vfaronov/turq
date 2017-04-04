@@ -1,6 +1,3 @@
-Examples
-========
-
 Basics
 ------
 
@@ -156,12 +153,17 @@ Inspecting requests
 -------------------
 
 To see what the client sends, including headers (but not the raw body),
-enable verbose diagnostics::
+put ``debug()`` somewhere early in your rules::
 
     debug()
 
-and watch the console output. (Alternatively, for even more diagnostics,
-run Turq with the ``--verbose`` option.)
+and watch the console output. Alternatively, for even more diagnostics,
+run Turq with the ``--verbose`` option.
+
+Or `use mitmproxy`_.
+
+.. _use mitmproxy:
+   http://turq.readthedocs.io/en/stable/guide.html#using-mitmproxy-with-turq
 
 
 Forwarding requests
