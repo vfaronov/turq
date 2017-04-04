@@ -7,6 +7,7 @@ import threading
 
 import colorlog
 
+import turq
 import turq.editor
 import turq.mock
 from turq.util.http import guess_external_url
@@ -29,6 +30,8 @@ def main():
 
 def parse_args(argv):
     parser = argparse.ArgumentParser()
+    parser.add_argument('--version', action='version',
+                        version='Turq %s' % turq.__version__)
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='print more verbose diagnostics')
     parser.add_argument('--no-color', action='store_true',
