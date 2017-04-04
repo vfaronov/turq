@@ -339,6 +339,13 @@ def test_cross_origin_resource_sharing_1_preflight(example):
     assert resp.text == ''
 
 
+def test_cross_origin_resource_sharing_2_callback(example):
+    resp = example.request('GET', '/', params={'callback': '__jsonp4321'})
+    assert resp.status_code == 200
+    assert resp.headers['Content-Type'] == 'application/javascript'
+    assert resp.text == '__jsonp4321({"some": "data"});'
+
+
 @pytest.mark.skipif(not os.path.exists('/etc/services'),
                     reason='requires a specific file')
 def test_body_from_file_1(example):

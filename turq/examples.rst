@@ -192,6 +192,11 @@ preflight requests automatically::
     cors()
     json({'some': 'data'})
 
+For legacy systems, JSONP is also supported, reacting automatically
+to a ``callback`` query parameter::
+
+    json({'some': 'data'}, jsonp=True)
+
 
 Compression
 -----------

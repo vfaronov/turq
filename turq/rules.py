@@ -220,9 +220,18 @@ class RulesContext:
         self.status(code)
         self.text('Error! %s\r\n' % error_explanation(code))
 
-    def json(self, obj):
-        self.header('Content-Type', 'application/json')
-        self.body(json.dumps(obj))
+    def json(self, obj, jsonp=False):
+        data = json.dumps(obj)
+        if jsonp and self.request.query.get('callback'):
+            self.header('Content-Type', 'application/javascript')
+            # http://timelessrepo.com/json-isnt-a-javascript-subset
+            data = (data.
+                    replace('\u2028', '\\u2028').
+                    replace('\u2029', '\\u2029'))
+            self.body('%s(%s);' % (self.request.query['callback'], data))
+        else:
+            self.header('Content-Type', 'application/json')
+            self.body(data)
 
     def route(self, spec):
         # Convert our simplistic route format to a regex to match the path.
