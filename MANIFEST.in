@@ -8,9 +8,10 @@ include CHANGELOG.rst
 
 include pylintrc
 
-# Even though Travis only works on a Git repo,
-# this file is important as a reference on the build procedure.
+# Even though Travis and AppVeyor only works on a Git repo,
+# these files are important as references on the build procedures.
 include .travis.yml
+include appveyor.yml
 
 graft tests
 graft docs
