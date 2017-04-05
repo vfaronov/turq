@@ -5,6 +5,7 @@ include screenshot.png
 include LICENSE
 include turq/editor/codemirror/LICENSE
 include CHANGELOG.rst
+include HACKING.rst
 
 include pylintrc
 
