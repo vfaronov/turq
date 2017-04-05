@@ -1,4 +1,5 @@
 import os
+import re
 
 from setuptools import setup
 
@@ -8,6 +9,11 @@ with open(os.path.join('turq', '__metadata__.py'), 'r') as f:
 
 with open('README.rst') as f:
     long_description = f.read()
+    # I prefer not to have shields in my package description.
+    # Shields reflect current status; they are good in a README
+    # when viewed on Git master, but not in versions published on PyPI.
+    long_description = re.sub(r'^\.\. status:.*?\n\n', '', long_description,
+                              flags=re.DOTALL | re.MULTILINE)
 
 
 setup(

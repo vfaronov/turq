@@ -1,9 +1,21 @@
 Turq
 ====
 
+.. status:
+.. image:: https://img.shields.io/pypi/v/turq.svg?
+   :target: https://pypi.python.org/pypi/turq
+.. image:: https://img.shields.io/pypi/pyversions/turq.svg?
+   :target: https://pypi.python.org/pypi/turq
+.. image:: https://readthedocs.org/projects/turq/badge/?version=latest
+   :target: http://turq.readthedocs.io/en/latest/
+.. image:: https://travis-ci.org/vfaronov/turq.svg?branch=master
+   :target: https://travis-ci.org/vfaronov/turq
+.. image:: https://ci.appveyor.com/api/projects/status/srfa9mlgafe63o6d?svg=true
+   :target: https://ci.appveyor.com/project/vfaronov/turq
+
 Turq is a small HTTP server that can be scripted in a Python-based language.
 Use it to set up **mock HTTP resources** that respond with the status, headers,
-and body of your choosing. Turq is designed for quick interactive testing,
+and body of your choosing. Turq is designed for **quick interactive testing**,
 but can be used in automated scenarios as well.
 
 
@@ -59,7 +71,7 @@ In any Python 3.4+ environment::
     $ pip3 install turq
     $ turq
 
-`Read the docs <http://turq.readthedocs.io/en/stable/>`_ for more.
+`Read the docs <http://turq.readthedocs.io/>`_ for more.
 
 
 Thanks

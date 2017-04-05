@@ -7,9 +7,11 @@ Quick start
 -----------
 
 To run Turq, you need `Python`_ 3.4 or higher.
-Once you have that, install Turq with `pip`_::
+Once you have that, install the `turq`_ package with `pip`_::
 
     $ pip3 install turq
+
+.. _turq: https://pypi.python.org/pypi/turq
 
 Start Turq::
 
@@ -22,17 +24,17 @@ You should see something like this::
     18:22:19  turq  editor on port 13086 - try http://pergamon:13086/
     18:22:19  turq  editor password: QGOf9Y9Eqjvz4XhY4JA3U7hG (any username)
 
-As you can see, by default, Turq starts two TCP servers.
-One is the *mock server*, which serves the actual mocks you define.
-The other is the optional *rules editor*, which makes writing mocks easier.
+As you can see, Turq starts two HTTP servers. One is the *mock server*
+for the mocks you define. The other is the optional *rules editor*
+that makes writing mocks easier.
 
-The first thing you want to do is probably to open the editor.
-By default, Turq listens on all network interfaces, so you can open the editor
-at ``http://localhost:13086/`` in your Web browser. Turq also tries to guess
-and print a URL that doesn't include ``localhost``, which is useful when
-you run Turq on some remote machine via SSH.
+First you probably want to open the editor. By default, Turq listens on all
+network interfaces, so you can open the editor at ``http://localhost:13086/``
+in your Web browser. Turq also tries to guess and print a URL that doesn't
+include ``localhost``, which is useful when you run Turq on some remote
+machine via SSH.
 
-Turq will ask you to enter a password that it generated and printed for you.
+Turq will ask you for the password that it generated and printed for you.
 You can leave the username field blank, it is ignored.
 
 .. warning::
@@ -43,11 +45,10 @@ You can leave the username field blank, it is ignored.
    If that's a problem, limit Turq to loopback with ``--bind localhost``,
    or `run without the editor <Programmatic use_>`_.
 
-The editor should be self-explanatory: you define your mock by writing
-code in the big code area, using the examples on the left as your guide.
-The default rules are just ``error(404)``, which means that the mock server
-will respond with 404 (Not Found) to any request it gets. Let's check that
-using curl::
+In the editor, you define your mock by writing rules in the big code area,
+using the examples on the right as your guide. The default rules are just
+``error(404)``, which means that the mock server will respond with 404
+(Not Found) to every request. Let's check that with curl::
 
     $ curl -i http://pergamon:13085/some/page.html
     HTTP/1.1 404 Not Found
@@ -58,7 +59,7 @@ using curl::
     Error! Nothing matches the given URI
 
 Keep an eye on the system console where you launched ``turq`` ---
-a log of all requests and responses is printed there::
+all requests and responses are logged there::
 
     19:01:30  turq.connection.1  new connection from 127.0.0.1
     19:01:30  turq.request.1  > GET /some/page.html HTTP/1.1
@@ -70,7 +71,7 @@ That's it, basically. Check ``turq --help`` for command-line options,
 or read on for more hints on how to use Turq.
 
 .. _Python: https://www.python.org/
-.. _pip: https://pip.pypa.io/en/stable/
+.. _pip: https://pip.pypa.io/
 
 
 Programmatic use
@@ -120,13 +121,12 @@ To avoid this, you can disable password protection with ``-P ""``, but be sure
 to have some other protection instead.
 
 The mock server doesn't send any cache-related headers by default. As a result,
-some browsers may decide to cache your mocks, leading to strange results.
-You can disable caching in your rules::
+some browsers may cache your mocks, leading to strange results. You can disable
+caching in your rules::
 
     add_header('Cache-Control', 'no-store')
 
-Turq has limited options to control the addresses it listens on. If you want
-to do something that you can't accomplish with those options, try using
-`socat`_ or mitmproxy to forward ports manually.
+Turq has limited options to control the addresses it listens on.
+You can forward its ports manually with `socat`_ or mitmproxy.
 
 .. _socat: http://www.dest-unreach.org/socat/
