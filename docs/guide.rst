@@ -104,7 +104,7 @@ Put `mitmproxy`_ in front of Turq to:
 
 Assuming Turq runs on the default port, use a command like this::
 
-    $ mitmproxy --port 13185 --reverse http://localhost:13085
+    $ mitmproxy -p 13185 --mode reverse:http://localhost:13085
 
 Then tell your client to connect to port 13185 (``http`` or ``https``)
 instead of 13085.
