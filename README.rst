@@ -1,17 +1,14 @@
 Turq
 ====
 
-.. status:
-.. image:: https://img.shields.io/pypi/v/turq.svg?
-   :target: https://pypi.python.org/pypi/turq
-.. image:: https://img.shields.io/pypi/pyversions/turq.svg?
-   :target: https://pypi.python.org/pypi/turq
-.. image:: https://readthedocs.org/projects/turq/badge/?version=latest
-   :target: http://turq.readthedocs.io/en/latest/
-.. image:: https://travis-ci.org/vfaronov/turq.svg?branch=master
-   :target: https://travis-ci.org/vfaronov/turq
-.. image:: https://ci.appveyor.com/api/projects/status/srfa9mlgafe63o6d?svg=true
-   :target: https://ci.appveyor.com/project/vfaronov/turq
+.. warning::
+
+   Turq is no longer maintained nor used by its author.
+   Try `mitmproxy`__ with `scripting`__ instead.
+   See also https://gist.github.com/vfaronov/3f7848932ed96a264c382902262ce7b3
+
+   __ https://mitmproxy.org/
+   __ https://docs.mitmproxy.org/stable/addons-scripting/
 
 Turq is a small HTTP server that can be scripted in a Python-based language.
 Use it to set up **mock HTTP resources** that respond with the status, headers,
